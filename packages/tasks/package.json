@@ -1,7 +1,7 @@
 {
   "name": "graphile-worker-tasks",
   "type": "module",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Organize and collect graphile-worker tasks",
   "author": "Ilya Semenov",
   "license": "MIT",
