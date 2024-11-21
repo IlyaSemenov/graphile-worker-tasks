@@ -1,0 +1,19 @@
+{
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@9.8.0",
+  "author": "Ilya Semenov",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint --fix .",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.10",
+    "@ilyasemenov/eslint-config": "^1.0.1",
+    "eslint": "^9.15.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "typescript": "^5.6.3"
+  }
+}
