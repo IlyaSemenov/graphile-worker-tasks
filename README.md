@@ -12,59 +12,57 @@ pnpm add graphile-worker-tasks
 
 ## Use
 
-Define task types:
-
-```ts
-declare global {
-  namespace GraphileWorker {
-    interface Tasks {
-      sendEmail: { email: string }
-      // ...
-    }
-  }
-}
-
-export {}
-```
-
 Define tasks:
 
 ```ts
 import { defineTask } from "graphile-worker-tasks"
 
-// Type check task name, infer argument types.
-export default defineTask("sendEmail", async ({ email }) => {
+export default defineTask("sendEmail", async (email: string) => {
   console.log(`Sending email: ${email}`)
 })
 ```
 
-Collect and run tasks:
+You can organize tasks across as many modules as needed.
+
+Once defined, collect and run your tasks:
 
 ```ts
 import { run } from "graphile-worker"
-import { createTaskList } from "graphile-worker-tasks"
+import { createTaskList, mergeTasks } from "graphile-worker-tasks"
 
-import sendEmailTask from "./tasks/sendEmail"
+import sendEmailTask from "../tasks/sendEmail"
 
-const taskList = createTaskList([
+const tasks = mergeTasks([
   sendEmailTask,
   // ...
 ])
 
 await run({
   connectionString: "...",
-  taskList,
+  taskList: createTaskList(tasks),
   parsedCronItems: [],
 })
 ```
 
-You can use the task handlers directly, but make sure to use correct names:
+Extend `GraphileWorker.Tasks` to ensure the `graphile-worker` tooling picks up the types:
+
+```ts
+declare global {
+  namespace GraphileWorker {
+    interface Tasks extends GraphileWorkerTasks<typeof tasks> {}
+  }
+}
+```
+
+There is no magic in this module — basically, it just stores the original task names and handles the typing quirks.
+
+You can omit the helpers and use the task handlers directly, but make sure to use the correct names:
 
 ```ts
 import { run } from "graphile-worker"
 
 // Import the module under a name that matches the queue job name.
-import sendEmail from "./tasks/sendEmail"
+import sendEmail from "../tasks/sendEmail"
 
 await run({
   connectionString: "...",

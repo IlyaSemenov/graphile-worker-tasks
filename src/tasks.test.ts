@@ -1,18 +1,24 @@
-import { expect, suite, test } from "vitest"
+import { describe, expect, test } from "vitest"
 
-import { createTaskList, defineTask } from "./tasks"
+import { createTaskList, defineTask, mergeTasks } from "./tasks"
 
-suite("createTaskList", () => {
-  // @ts-expect-error GraphileWorker.Tasks is never in test scope.
-  const handleTask1 = defineTask("task1", () => {})
-  // @ts-expect-error GraphileWorker.Tasks is never in test scope.
-  const handleTask2 = defineTask("task2", () => {})
+describe("mergeTasks", () => {
+  const task1 = defineTask("task1", () => {})
+  const task2 = defineTask("task2", () => {})
+  const task3 = defineTask("task2", () => {}) // Duplicate task name
 
-  test("list of tasks", () => {
-    expect(createTaskList([handleTask1, handleTask2])).toEqual({ task1: handleTask1, task2: handleTask2 })
+  test("merge tasks", () => {
+    expect(mergeTasks([task1, task2])).toEqual([task1, task2])
   })
 
-  test("object of tasks", () => {
-    expect(createTaskList({ handleTask1, handleTask2 })).toEqual({ task1: handleTask1, task2: handleTask2 })
+  test("merge tasks with duplicate names", () => {
+    expect(() => mergeTasks([task1, task2, task3])).toThrow("Task names must be unique.")
   })
+})
+
+test("createTaskList", () => {
+  const task1 = defineTask("task1", () => {})
+  const task2 = defineTask("task2", () => {})
+
+  expect(createTaskList([task1, task2])).toEqual({ task1, task2 })
 })

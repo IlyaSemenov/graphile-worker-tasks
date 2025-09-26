@@ -29,7 +29,7 @@
     "prepublishOnly": "pnpm build",
     "build": "tsup",
     "lint": "eslint --fix .",
-    "test": "vitest run"
+    "test": "vitest run --typecheck"
   },
   "peerDependencies": {
     "graphile-worker": ">=0.12"
