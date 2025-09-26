@@ -42,7 +42,7 @@
     "lint-staged": "^16.2.1",
     "tsconfig-vite-node": "^1.1.2",
     "tsup": "^8.3.5",
-    "typescript": "^5.6.3",
+    "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
 }
