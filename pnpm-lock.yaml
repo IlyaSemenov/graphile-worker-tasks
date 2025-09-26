@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      graphile-worker:
+        specifier: '>=0.12'
+        version: 0.16.6(typescript@5.6.3)
     devDependencies:
       '@changesets/cli':
         specifier: ^2.27.10
@@ -23,41 +27,15 @@ importers:
       lint-staged:
         specifier: ^16.2.1
         version: 16.2.1
+      tsconfig-vite-node:
+        specifier: ^1.1.2
+        version: 1.1.2
+      tsup:
+        specifier: ^8.3.5
+        version: 8.3.5(postcss@8.5.6)(typescript@5.6.3)(yaml@2.8.1)
       typescript:
         specifier: ^5.6.3
         version: 5.6.3
-
-  packages/orchid:
-    dependencies:
-      graphile-worker:
-        specifier: '>=0.12'
-        version: 0.16.6(typescript@5.6.3)
-      orchid-orm:
-        specifier: ^1.12.0
-        version: 1.38.0(typescript@5.6.3)
-    devDependencies:
-      tsconfig-vite-node:
-        specifier: ^1.1.2
-        version: 1.1.2
-      tsup:
-        specifier: ^8.3.5
-        version: 8.3.5(postcss@8.5.6)(typescript@5.6.3)(yaml@2.8.1)
-      vitest:
-        specifier: ^2.1.5
-        version: 2.1.5(@types/node@20.17.6)
-
-  packages/tasks:
-    dependencies:
-      graphile-worker:
-        specifier: '>=0.12'
-        version: 0.16.6(typescript@5.6.3)
-    devDependencies:
-      tsconfig-vite-node:
-        specifier: ^1.1.2
-        version: 1.1.2
-      tsup:
-        specifier: ^8.3.5
-        version: 8.3.5(postcss@8.5.6)(typescript@5.6.3)(yaml@2.8.1)
       vitest:
         specifier: ^2.1.5
         version: 2.1.5(@types/node@20.17.6)
@@ -1696,10 +1674,6 @@ packages:
     resolution: {integrity: sha512-m6FAo/spmsW2Ab2fU35JTYwtOKa2yAwXSwgjSv1TJzh4Mh7mC3lzAOVLBprb72XsTrgkEIsl7YrFNAiDiRhIGg==}
     engines: {node: '>=12'}
 
-  inflection@3.0.0:
-    resolution: {integrity: sha512-1zEJU1l19SgJlmwqsEyFTbScw/tkMHFenUo//Y0i+XEP83gDFdMvPizAD/WGcE+l1ku12PcTVHQhO6g5E0UCMw==}
-    engines: {node: '>=18.0.0'}
-
   interpret@3.1.1:
     resolution: {integrity: sha512-6xwYfHbajpoF0xLW+iwLkhwgvLoZDfjYfoFNu8ftMoXINzwuymNLd9u/KmwtdT2GbR+/Cz66otEGEVVUHX9QLQ==}
     engines: {node: '>=10.13.0'}
@@ -1811,10 +1785,6 @@ packages:
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
-
-  kleur@3.0.3:
-    resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
-    engines: {node: '>=6'}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -2083,14 +2053,6 @@ packages:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
 
-  orchid-core@0.21.3:
-    resolution: {integrity: sha512-gZkKiw/JueU6YRD0HIOfA0Q4wiBcL2/EqzOY5SBGyVsH/kWBgHNvblm+H8Ye0mle4RhimFgyF5Rrat4LNaJYmg==}
-
-  orchid-orm@1.38.0:
-    resolution: {integrity: sha512-jbpshuN4pjDOULNZs3wZXgi/rPLoW2q0rXB3SElbOkA4/wcW/YQCdzWXrYRFBUy8yJq3gcjOamWArdXvlJl3Mw==}
-    peerDependencies:
-      typescript: '*'
-
   os-tmpdir@1.0.2:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
@@ -2319,9 +2281,6 @@ packages:
   postgres-range@1.1.4:
     resolution: {integrity: sha512-i/hbxIE9803Alj/6ytL7UHQxRvZkI9O4Sy+J3HGc4F4oo/2eQAjTSNJ0bfxyse3bH0nuVesCk+3IRLaMtG3H6w==}
 
-  pqb@0.43.0:
-    resolution: {integrity: sha512-G2b2xaPaU56sfgxA0X6KY/oDuRBwtl2KZvpzcZhLV/hrc5YqqrDyI2AONjfrPG3sHn6Nz/fYSWE+tfBTfHqjHw==}
-
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
@@ -2330,10 +2289,6 @@ packages:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
     engines: {node: '>=10.13.0'}
     hasBin: true
-
-  prompts@2.4.2:
-    resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
-    engines: {node: '>= 6'}
 
   pug-error@2.1.0:
     resolution: {integrity: sha512-lv7sU9e5Jk8IeUheHata6/UThZ7RK2jnaaNztxfPYUY+VxZyk/ePVaNZ/vwmH8WqGvDz3LrNYt/+gA55NDg6Pg==}
@@ -2350,9 +2305,6 @@ packages:
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
-
-  rake-db@2.23.20:
-    resolution: {integrity: sha512-irbdFplUoWmMEiyRDdmVQ7AC0LqXBss/E42+M9dKh4oa7JYHh3CEKAnqcqw0DNEZ7os4cdXSZDWY0LVItF/Ikw==}
 
   read-yaml-file@1.1.0:
     resolution: {integrity: sha512-VIMnQi/Z4HT2Fxuwg5KrY174U1VdUIASQVWXXyqtNRtxSr9IYkn1rsI6Tb6HsrHCmB7gVpNwX6JxPTHcH6IoTA==}
@@ -4565,8 +4517,6 @@ snapshots:
 
   indent-string@5.0.0: {}
 
-  inflection@3.0.0: {}
-
   interpret@3.1.1: {}
 
   is-arrayish@0.2.1: {}
@@ -4660,8 +4610,6 @@ snapshots:
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
-
-  kleur@3.0.3: {}
 
   levn@0.4.1:
     dependencies:
@@ -5115,19 +5063,6 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  orchid-core@0.21.3: {}
-
-  orchid-orm@1.38.0(typescript@5.6.3):
-    dependencies:
-      inflection: 3.0.0
-      orchid-core: 0.21.3
-      pqb: 0.43.0
-      prompts: 2.4.2
-      rake-db: 2.23.20
-      typescript: 5.6.3
-    transitivePeerDependencies:
-      - pg-native
-
   os-tmpdir@1.0.2: {}
 
   outdent@0.5.0: {}
@@ -5315,22 +5250,9 @@ snapshots:
 
   postgres-range@1.1.4: {}
 
-  pqb@0.43.0:
-    dependencies:
-      '@types/pg': 8.11.10
-      orchid-core: 0.21.3
-      pg: 8.13.1
-    transitivePeerDependencies:
-      - pg-native
-
   prelude-ls@1.2.1: {}
 
   prettier@2.8.8: {}
-
-  prompts@2.4.2:
-    dependencies:
-      kleur: 3.0.3
-      sisteransi: 1.0.5
 
   pug-error@2.1.0: {}
 
@@ -5345,14 +5267,6 @@ snapshots:
   quansync@0.2.11: {}
 
   queue-microtask@1.2.3: {}
-
-  rake-db@2.23.20:
-    dependencies:
-      orchid-core: 0.21.3
-      pqb: 0.43.0
-      prompts: 2.4.2
-    transitivePeerDependencies:
-      - pg-native
 
   read-yaml-file@1.1.0:
     dependencies:
