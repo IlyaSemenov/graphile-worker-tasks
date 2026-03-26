@@ -4,7 +4,7 @@ import type { JobHelpers, PromiseOrDirect, TaskList } from "graphile-worker"
 // We should rather be using ReturnType<GraphileWorkerTask> here,
 // but when using with conjunction with the GraphileWorkerTasks helper,
 // it leads to error: Return type annotation circularly references itself.
-type Task<TPayload> = (payload: TPayload, helpers: JobHelpers) => PromiseOrDirect<void | PromiseOrDirect<unknown>[]>
+export type Task<TPayload> = (payload: TPayload, helpers: JobHelpers) => PromiseOrDirect<void | PromiseOrDirect<unknown>[]>
 
 export type NamedTask<TName extends string, TPayload> = Task<TPayload> & {
   taskName: TName
