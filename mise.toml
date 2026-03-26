@@ -1,0 +1,5 @@
+[tools]
+node = '24.8'
+
+[settings.node]
+corepack = true
