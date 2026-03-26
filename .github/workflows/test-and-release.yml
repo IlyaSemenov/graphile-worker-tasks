@@ -1,13 +1,22 @@
 name: Test and Release
 
 env:
+  # Keep in sync with .changeset/config.json:baseBranch
   MAIN_REF: refs/heads/main
+  # For jdx/mise-action@v3, see https://github.com/jdx/mise-action/issues/394
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 on:
   push:
     branches: ["**"]
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+# Publish to npm with OIDC
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
 
 jobs:
   test-and-release:
@@ -16,30 +25,24 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24.8
-          cache: pnpm
+      - name: Setup mise
+        uses: jdx/mise-action@v3
 
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: pnpm run -r build
+      - name: Build package
+        run: pnpm run build
 
-      - name: Test packages
-        run: pnpm run -r test
+      - name: Test package
+        run: pnpm run test
 
       - name: Capture new release versions
         if: ${{ github.ref == env.MAIN_REF }}
         run: |
-          if pnpx @changesets/cli status --output=release.json; then
+          if npx @changesets/cli status --output=release.json; then
             echo "RELEASE=Version $(jq -r '.releases[0].newVersion' release.json)" >> "$GITHUB_ENV"
             rm release.json
           fi
@@ -48,9 +51,8 @@ jobs:
         if: ${{ github.ref == env.MAIN_REF }}
         uses: changesets/action@v1
         with:
-          publish: pnpm changeset publish
+          publish: npx changeset publish
           title: ${{ env.RELEASE }}
           commit: ${{ env.RELEASE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
