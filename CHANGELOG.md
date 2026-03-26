@@ -1,5 +1,11 @@
 # graphile-worker-tasks
 
+## 2.0.1
+
+### Patch Changes
+
+- 32f2994: Export `Task` type for reuse.
+
 ## 2.0.0
 
 ### Major Changes
