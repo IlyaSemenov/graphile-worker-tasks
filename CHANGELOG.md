@@ -1,5 +1,15 @@
 # graphile-worker-tasks
 
+## 2.1.0
+
+### Minor Changes
+
+- 20f8b6b: Add support for binding `addJob` to defined tasks.
+
+### Patch Changes
+
+- 3b46450: Changed wording of "task name" to "task identifier" to match upstream.
+
 ## 2.0.1
 
 ### Patch Changes
