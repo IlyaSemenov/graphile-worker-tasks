@@ -54,20 +54,20 @@ declare global {
 }
 ```
 
-There is no magic in this module — basically, it just stores the original task names and handles the typing quirks.
+There is no magic in this module — basically, it just stores the task identifiers and handles the typing quirks.
 
-You can omit the helpers and use the task handlers directly, but make sure to use the correct names:
+You can omit the helpers and use the task handlers directly, but make sure to use correct task identifiers:
 
 ```ts
 import { run } from "graphile-worker"
 
-// Import the module under a name that matches the queue job name.
+// Import the module under a name that matches the task identifier.
 import sendEmail from "../tasks/sendEmail"
 
 await run({
   connectionString: "...",
   taskList: {
-    sendEmail, // The key here must match the queue job name.
+    sendEmail, // The key here must match the task identifier.
     // ...
   },
   parsedCronItems: [],
