@@ -73,3 +73,24 @@ await run({
   parsedCronItems: [],
 })
 ```
+
+## Binding addJob to tasks
+
+If you want each defined task to also know how to enqueue itself, bind your app's `addJob` implementation once and use the returned `defineTask`.
+
+For example, to enqueue jobs within the active Orchid ORM transaction, use `addJob` from [graphile-worker-orchid](https://github.com/IlyaSemenov/graphile-worker-orchid).
+
+```ts
+import { createDefineTask } from "graphile-worker-tasks"
+
+import { addJob } from "../my-add-job"
+
+const defineTask = createDefineTask({ addJob })
+
+export const sendEmail = defineTask("sendEmail", async (email: string) => {
+  console.log(`Sending email: ${email}`)
+})
+
+// Collect and run tasks as usual, and also enqueue them directly:
+await sendEmail.addJob("user@example.com")
+```

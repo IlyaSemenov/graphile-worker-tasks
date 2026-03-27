@@ -22,3 +22,10 @@ test("createTaskList", () => {
 
   expect(createTaskList([task1, task2])).toEqual({ task1, task2 })
 })
+
+test("defineTask returns a plain named task", () => {
+  const task = defineTask("task1", () => {})
+
+  expect(task.taskIdentifier).toBe("task1")
+  expect("addJob" in task).toBe(false)
+})
