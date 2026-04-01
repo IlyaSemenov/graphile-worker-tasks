@@ -54,7 +54,7 @@ declare global {
 }
 ```
 
-There is no magic in this module — basically, it just stores the task identifiers and handles the typing quirks.
+There is no magic in this module — it just stores the task identifiers and handles the typing quirks.
 
 You can omit the helpers and use the task handlers directly, but make sure to use correct task identifiers:
 
@@ -94,3 +94,5 @@ export const sendEmail = defineTask("sendEmail", async (email: string) => {
 // Collect and run tasks as usual, and also enqueue them directly:
 await sendEmail.addJob("user@example.com")
 ```
+
+If only using the bound `addJob`, you can omit augmenting `namespace GraphileWorker`.
