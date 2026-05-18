@@ -1,5 +1,11 @@
 # graphile-worker-tasks
 
+## 2.2.0
+
+### Minor Changes
+
+- c4ad3ca: Add `task.run(payload, helpers?)` to run any defined task directly, useful in tests.
+
 ## 2.1.0
 
 ### Minor Changes
