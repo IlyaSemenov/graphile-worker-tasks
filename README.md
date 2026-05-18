@@ -96,3 +96,37 @@ await sendEmail.addJob("user@example.com")
 ```
 
 If only using the bound `addJob`, you can omit augmenting `namespace GraphileWorker`.
+
+## Running tasks directly
+
+Tasks can be run directly, which is useful in tests:
+
+```ts
+await sendEmail.run("user@example.com")
+```
+
+By default, `run` provides a minimal `JobHelpers` object. The default manual helpers use graphile-worker's console logger and include a synthetic `helpers.job` for the manual run. Helpers that require a real worker or database context, such as `query`, `withPgClient`, `addJob`, and `getQueueName`, throw a clear error.
+
+If your task uses those helpers, pass them as the second argument. A partial object is shallow-merged onto the default helpers:
+
+```ts
+await sendEmail.run("user@example.com", { query: myTestQuery })
+```
+
+For helpers that depend on the payload, pass a factory instead. It receives the default helpers and returns the full helpers object:
+
+```ts
+await sendEmail.run("user@example.com", ({ defaultHelpers, payload }) => ({
+  ...defaultHelpers,
+  query: queryForTenant(payload),
+}))
+```
+
+When using a bound `defineTask`, you can configure helpers once for every task's `run`. Per-call helpers still override them:
+
+```ts
+const defineTask = createDefineTask({
+  addJob,
+  helpers: { query: myTestQuery },
+})
+```

@@ -11,6 +11,14 @@ test("defineTask, GraphileWorkerTasks", () => {
   })
   const task3 = defineTask("task3", () => {})
 
+  expectTypeOf<Parameters<typeof task1.run>[0]>().toEqualTypeOf<number>()
+  expectTypeOf<Parameters<typeof task2.run>[0]>().toEqualTypeOf<{ bar: string }>()
+
+  task2.run({ bar: "baz" }, ({ payload }) => {
+    expectTypeOf(payload).toEqualTypeOf<{ bar: string }>()
+    throw new Error("test helper factory")
+  })
+
   const _tasks = [task1, task2, task3]
 
   interface Tasks extends GraphileWorkerTasks<typeof _tasks> {}

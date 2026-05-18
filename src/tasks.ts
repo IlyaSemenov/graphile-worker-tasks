@@ -1,13 +1,34 @@
 import type { JobHelpers, PromiseOrDirect, TaskList } from "graphile-worker"
 
+import { runTask } from "./run"
+import type { TaskHelpers } from "./taskHelpers"
+
 // Copy the return type from the graphile-worker package.
 // We should rather be using ReturnType<GraphileWorkerTask> here,
 // but when used in conjunction with the GraphileWorkerTasks helper,
 // it leads to an error: Return type annotation circularly references itself.
-export type Task<TPayload> = (payload: TPayload, helpers: JobHelpers) => PromiseOrDirect<void | PromiseOrDirect<unknown>[]>
+/**
+ * The value a graphile-worker task handler may return.
+ */
+export type TaskResult = PromiseOrDirect<void | PromiseOrDirect<unknown>[]>
 
+/**
+ * A graphile-worker task handler with a typed payload.
+ */
+export type Task<TPayload> = (payload: TPayload, helpers: JobHelpers) => TaskResult
+
+/**
+ * A task handler annotated with the graphile-worker task identifier it handles.
+ */
 export type NamedTask<TIdentifier extends string, TPayload> = Task<TPayload> & {
+  /**
+   * Identifier used by graphile-worker to route jobs to this task.
+   */
   taskIdentifier: TIdentifier
+  /**
+   * Run this task directly with the default manual helpers, optionally patched or replaced by the provided helpers.
+   */
+  run(payload: TPayload, helpers?: TaskHelpers<TPayload>): TaskResult
 }
 
 /**
@@ -16,6 +37,7 @@ export type NamedTask<TIdentifier extends string, TPayload> = Task<TPayload> & {
 export function defineTask<TIdentifier extends string, TPayload>(taskIdentifier: TIdentifier, task: Task<TPayload>): NamedTask<TIdentifier, TPayload> {
   const definedTask = task as NamedTask<TIdentifier, TPayload>
   definedTask.taskIdentifier = taskIdentifier
+  definedTask.run = (payload, helpers) => runTask(definedTask, taskIdentifier, payload, helpers)
   return definedTask
 }
 

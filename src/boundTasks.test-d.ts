@@ -20,6 +20,7 @@ test("createDefineTask preserves payload typing", () => {
   const task4 = defineBoundNamedTask("task4", (_foo: { baz: number }) => {})
 
   expectTypeOf<Parameters<typeof task4.addJob>[0]>().toEqualTypeOf<{ baz: number }>()
+  expectTypeOf<Parameters<typeof task4.run>[0]>().toEqualTypeOf<{ baz: number }>()
   expectTypeOf(task4).toEqualTypeOf<BoundNamedTask<"task4", { baz: number }>>()
 
   interface Tasks extends GraphileWorkerTasks<[typeof task1, typeof task4]> {}
