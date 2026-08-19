@@ -32,6 +32,14 @@ export type NamedTask<TIdentifier extends string, TPayload> = Task<TPayload> & {
 }
 
 /**
+ * A NamedTask with its payload type erased to `never`, the only sound choice
+ * given that TPayload sits in a contravariant position (the task's call
+ * signature and its `run` method parameter). Used as the element type for
+ * heterogeneous lists of tasks, where each task has its own payload type.
+ */
+export type AnyNamedTask = NamedTask<string, never>
+
+/**
  * Define a graphile-worker task handler.
  */
 export function defineTask<TIdentifier extends string, TPayload>(taskIdentifier: TIdentifier, task: Task<TPayload>): NamedTask<TIdentifier, TPayload> {
@@ -44,7 +52,7 @@ export function defineTask<TIdentifier extends string, TPayload>(taskIdentifier:
 /**
  * Merge lists of tasks into a single list.
  */
-export function mergeTasks<T extends NamedTask<any, any>>(tasks: T[]): T[] {
+export function mergeTasks<T extends AnyNamedTask>(tasks: T[]): T[] {
   const taskIdentifiers = new Set(tasks.map(task => task.taskIdentifier))
   if (taskIdentifiers.size !== tasks.length) {
     throw new Error("Task identifiers must be unique.")
@@ -56,8 +64,10 @@ export function mergeTasks<T extends NamedTask<any, any>>(tasks: T[]): T[] {
  * Given a collection of tasks defined with defineTask,
  * create a TaskList object that can be used by graphile-worker.
  */
-export function createTaskList(tasks: NamedTask<any, any>[]): TaskList {
-  return Object.fromEntries(tasks.map(task => [task.taskIdentifier, task]))
+export function createTaskList(tasks: AnyNamedTask[]): TaskList {
+  // AnyNamedTask erases the payload to `never` so heterogeneous task lists type-check;
+  // that makes it unassignable to TaskList's `Task<any>` value type (payload `unknown`), hence the cast.
+  return Object.fromEntries(tasks.map(task => [task.taskIdentifier, task])) as unknown as TaskList
 }
 
 /**
@@ -76,9 +86,9 @@ export function createTaskList(tasks: NamedTask<any, any>[]): TaskList {
  * }
  * ```
  */
-export type GraphileWorkerTasks<TTasks extends NamedTask<any, any>[]> = {
+export type GraphileWorkerTasks<TTasks extends AnyNamedTask[]> = {
   [K in TTasks[number]["taskIdentifier"]]: InferNamedTaskPayload<TTasks[number], K>
 }
 
 // Somehow this needs to be a separate type, it won't work if used literally in GraphileWorkerTasks.
-type InferNamedTaskPayload<T extends NamedTask<any, any>, K extends string> = T extends NamedTask<K, infer Args> ? Args : never
+type InferNamedTaskPayload<T extends AnyNamedTask, K extends string> = T extends NamedTask<K, infer Args> ? Args : never

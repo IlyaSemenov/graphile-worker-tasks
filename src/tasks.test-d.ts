@@ -1,8 +1,8 @@
 import type { JobHelpers } from "graphile-worker"
 import { expectTypeOf, test } from "vitest"
 
-import type { GraphileWorkerTasks } from "./tasks"
-import { defineTask } from "./tasks"
+import type { AnyNamedTask, GraphileWorkerTasks } from "./tasks"
+import { defineTask, mergeTasks } from "./tasks"
 
 test("defineTask, GraphileWorkerTasks", () => {
   const task1 = defineTask("task1", (_foo: number) => {})
@@ -29,4 +29,15 @@ test("defineTask, GraphileWorkerTasks", () => {
     // TODO: This should be "never", not "unknown".
     task3: unknown
   }>()
+})
+
+test("AnyNamedTask accepts a heterogeneous list of tasks by payload type", () => {
+  const task1 = defineTask("task1", (_foo: number) => {})
+  const task2 = defineTask("task2", (_foo: { bar: string }) => {})
+
+  const tasks: AnyNamedTask[] = [task1, task2]
+  void tasks
+
+  const merged = mergeTasks([task1, task2])
+  expectTypeOf(merged).toEqualTypeOf<(typeof task1 | typeof task2)[]>()
 })
