@@ -1,5 +1,12 @@
 # graphile-worker-tasks
 
+## 2.2.1
+
+### Patch Changes
+
+- c6abf78: Fix `mergeTasks` and `createTaskList` to accept tasks with different payload types without requiring `any`.
+  Export the new `AnyNamedTask` type (`NamedTask<string, never>`) for consumers who need to type a heterogeneous list of tasks themselves.
+
 ## 2.2.0
 
 ### Minor Changes
