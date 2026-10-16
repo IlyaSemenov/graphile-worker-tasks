@@ -379,3 +379,33 @@ await run // rejects with an AbortError
 
 The same applies to helpers configured for a bound `defineTask`: a per-call `abortSignal` without `abortPromise` also replaces the configured `abortPromise`.
 A helpers factory must keep `abortSignal` and `abortPromise` consistent itself.
+
+## Testing
+
+`createTestJobs()` from `graphile-worker-tasks/testing` records jobs instead of writing them to the database, so tests can check what code enqueues:
+
+```ts
+import { createTestJobs } from "graphile-worker-tasks/testing"
+
+export const testJobs = createTestJobs()
+```
+
+In tests, make the `addJob` your definitions are bound to call `testJobs.addJob`, for example through dependency injection or a module mock.
+
+Run the code under test with `capture` and query the jobs it enqueued:
+
+```ts
+import { sendEmailTask } from "./tasks/sendEmail"
+
+const jobs = await testJobs.capture(() => signUp("user@example.com"))
+
+expect(jobs.payloadsFor(sendEmailTask)).toEqual([{ to: "user@example.com" }])
+```
+
+- The queries cover only the jobs enqueued while the action runs, so jobs of fixtures and earlier steps stay out.
+- `jobs.result` is the value returned by the action.
+- `jobs.callsFor(sendEmailTask)` returns the identifier, payload, and spec of each job.
+- For a wrapped definition, the queries return the job payload.
+- `testJobs.calls` lists every recorded job, and `testJobs.clear()` forgets them, for example before each test.
+
+To run a task in a test, see [Running tasks directly](#running-tasks-directly).
