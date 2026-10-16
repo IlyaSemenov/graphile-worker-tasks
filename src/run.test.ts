@@ -140,7 +140,7 @@ describe("task.run", () => {
   })
 })
 
-test("runTask runs a bare task handler", async () => {
+test("runTask runs a bare task function", async () => {
   const calls: unknown[][] = []
   await runTask(async (payload: { foo: string }, helpers) => {
     calls.push([payload, helpers.job.task_identifier])

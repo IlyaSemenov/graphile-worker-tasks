@@ -12,25 +12,33 @@ pnpm add graphile-worker-tasks
 
 ## Use
 
-Define tasks:
+Define a task contract: its identifier and payload type, without an implementation.
 
 ```ts
+// tasks/sendEmail.ts
 import { defineTask } from "graphile-worker-tasks"
 
-export default defineTask("sendEmail", async (email: string) => {
-  console.log(`Sending email: ${email}`)
+export const sendEmail = defineTask("sendEmail").withPayload<{ to: string }>()
+```
+
+Implement the task in a module imported only by the worker:
+
+```ts
+// tasks/sendEmail.task.ts
+import { sendEmail } from "./sendEmail"
+
+export const sendEmailTask = sendEmail.implement(async (payload, helpers) => {
+  helpers.logger.info(`Sending email to ${payload.to}`)
 })
 ```
 
-You can organize tasks across as many modules as needed.
-
-Once defined, collect and run your tasks:
+Collect the tasks and run the worker:
 
 ```ts
 import { run } from "graphile-worker"
 import { createTaskList, mergeTasks } from "graphile-worker-tasks"
 
-import sendEmailTask from "../tasks/sendEmail"
+import { sendEmailTask } from "../tasks/sendEmail.task"
 
 const tasks = mergeTasks([
   sendEmailTask,
@@ -56,29 +64,43 @@ declare global {
 
 There is no magic in this module — it just stores the task identifiers and handles the typing quirks.
 
-You can omit the helpers and use the task handlers directly, but make sure to use correct task identifiers:
+You can omit the helpers and use the tasks directly, but make sure to use correct task identifiers:
 
 ```ts
-import { run } from "graphile-worker"
-
-// Import the module under a name that matches the task identifier.
-import sendEmail from "../tasks/sendEmail"
-
 await run({
   connectionString: "...",
   taskList: {
-    sendEmail, // The key here must match the task identifier.
+    sendEmail: sendEmailTask, // The key here must match the task identifier.
     // ...
   },
   parsedCronItems: [],
 })
 ```
 
-## Binding addJob to tasks
+### Enqueueing jobs
 
-If you want each defined task to also know how to enqueue itself, bind your app's `addJob` implementation once and use the returned `defineTask`.
+Bind a definition to your app's `addJob` implementation to enqueue jobs with a typed payload:
+
+```ts
+// producers/sendEmail.ts
+import { addJob } from "../my-add-job"
+import { sendEmail } from "../tasks/sendEmail"
+
+export const sendEmailLater = sendEmail.withAddJob(addJob)
+
+await sendEmailLater.addJob({ to: "user@example.com" }, { maxAttempts: 5 })
+```
+
+The producer imports the definition, not the task, so the implementation and its dependencies stay out of the producer's module graph.
 
 For example, to enqueue jobs within the active Orchid ORM transaction, use `addJob` from [graphile-worker-orchid](https://github.com/IlyaSemenov/graphile-worker-orchid).
+
+`withAddJob` returns a new bound definition, so one definition can be bound to several `addJob` implementations.
+
+### Binding every task at once
+
+To bind all tasks to one `addJob` implementation, create a bound `defineTask` once and use it in place of the imported one.
+Its definitions enqueue jobs, and their `implement` returns a task that can also enqueue itself:
 
 ```ts
 import { createDefineTask } from "graphile-worker-tasks"
@@ -87,44 +109,83 @@ import { addJob } from "../my-add-job"
 
 const defineTask = createDefineTask({ addJob })
 
+export const sendEmail = defineTask("sendEmail").withPayload<{ to: string }>()
+
+await sendEmail.addJob({ to: "user@example.com" })
+```
+
+If only using the bound `addJob`, you can omit augmenting `namespace GraphileWorker`.
+
+### Defining a task with its implementation
+
+`defineTask` also accepts the task function directly and returns it annotated with the task identifier:
+
+```ts
+export const sendEmail = defineTask("sendEmail", async (email: string) => {
+  console.log(`Sending email: ${email}`)
+})
+```
+
+The same form of a bound `defineTask` also adds `addJob` to the task:
+
+```ts
+const defineTask = createDefineTask({ addJob })
+
 export const sendEmail = defineTask("sendEmail", async (email: string) => {
   console.log(`Sending email: ${email}`)
 })
 
-// Collect and run tasks as usual, and also enqueue them directly:
 await sendEmail.addJob("user@example.com")
 ```
 
-If only using the bound `addJob`, you can omit augmenting `namespace GraphileWorker`.
+Such a task brings its implementation and dependencies into every module that imports it.
+To split it, move the identifier and payload type to a definition and keep the implementation in a worker-only module:
+
+```ts
+// Before
+export const sendEmail = defineTask("sendEmail", async (email: string) => {
+  await mailer.send(email)
+})
+
+// After: tasks/sendEmail.ts
+export const sendEmail = defineTask("sendEmail").withPayload<string>()
+
+// After: tasks/sendEmail.task.ts
+export const sendEmailTask = sendEmail.implement(async (email) => {
+  await mailer.send(email)
+})
+```
+
+The task identifier and payload are unchanged, so jobs enqueued before the split run with the new task.
 
 ## Running tasks directly
 
 Tasks can be run directly, which is useful in tests:
 
 ```ts
-await sendEmail.run("user@example.com")
+await sendEmailTask.run({ to: "user@example.com" })
 ```
 
 By default, `run` provides a minimal `JobHelpers` object.
 The default manual helpers use graphile-worker's console logger and include a synthetic `helpers.job` for the manual run.
-Helpers that require a real worker or database context, such as `query`, `withPgClient`, `addJob`, `addJobs`, and `getQueueName`, throw a clear error.
+Helpers that require a real worker or database context, such as `query`, `withPgClient`, `addJob`, `addJobs`, and `getQueueName`, are not provided.
 
 If your task uses those helpers, pass them as the second argument. A partial object is shallow-merged onto the default helpers:
 
 ```ts
-await sendEmail.run("user@example.com", { query: myTestQuery })
+await sendEmailTask.run({ to: "user@example.com" }, { query: myTestQuery })
 ```
 
 For helpers that depend on the payload, pass a factory instead. It receives the default helpers and returns the full helpers object:
 
 ```ts
-await sendEmail.run("user@example.com", ({ defaultHelpers, payload }) => ({
+await sendEmailTask.run({ to: "user@example.com" }, ({ defaultHelpers, payload }) => ({
   ...defaultHelpers,
   query: queryForTenant(payload),
 }))
 ```
 
-When using a bound `defineTask`, you can configure helpers once for every task's `run`.
+When using a bound `defineTask`, you can configure default helpers for `run` of every task it defines.
 Per-call helpers still override them:
 
 ```ts
@@ -145,7 +206,7 @@ Unless you also pass `abortPromise`, `helpers.abortPromise` rejects when the sig
 ```ts
 import { setTimeout } from "node:timers/promises"
 
-const pollFeed = defineTask("pollFeed", async (delay: number, helpers) => {
+const pollFeed = defineTask("pollFeed").withPayload<number>().implement(async (delay, helpers) => {
   await setTimeout(delay, undefined, { signal: helpers.abortSignal })
 })
 

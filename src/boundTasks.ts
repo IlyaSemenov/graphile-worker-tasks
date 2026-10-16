@@ -1,18 +1,39 @@
 import type { AddJobFunction, Job, TaskSpec } from "graphile-worker"
 
+import { bindNamedTask, createBoundTaskDefinition, nameTask } from "./taskFactories"
 import type { TaskHelpers } from "./taskHelpers"
-import { resolveTaskHelpers } from "./taskHelpers"
 import type { NamedTask, Task } from "./tasks"
-import { defineTask } from "./tasks"
 
 /**
  * A named task with helpers for enqueueing and manually running itself.
  */
 export type BoundNamedTask<TIdentifier extends string, TPayload> = NamedTask<TIdentifier, TPayload> & {
   /**
-   * Enqueue this task through the addJob implementation bound by createDefineTask.
+   * Enqueue this task through the bound addJob implementation.
    */
   addJob(payload: TPayload, spec?: TaskSpec): Promise<Job>
+}
+
+/**
+ * A task definition bound to an addJob implementation, able to enqueue jobs without an implementation.
+ */
+export type BoundTaskDefinition<TIdentifier extends string, TPayload> = {
+  /**
+   * Identifier used by graphile-worker to route jobs to this task.
+   */
+  readonly taskIdentifier: TIdentifier
+  /**
+   * Enqueue this task through the bound addJob implementation.
+   */
+  addJob(payload: TPayload, spec?: TaskSpec): Promise<Job>
+  /**
+   * Create a bound definition of the same task with the given payload type.
+   */
+  withPayload<TNewPayload>(): BoundTaskDefinition<TIdentifier, TNewPayload>
+  /**
+   * Create the task implementing this definition, bound to the same addJob implementation and createDefineTask helpers.
+   */
+  implement(task: Task<TPayload>): BoundNamedTask<TIdentifier, TPayload>
 }
 
 /**
@@ -33,34 +54,14 @@ export type CreateDefineTaskOptions = {
  * Create a defineTask function bound to an addJob implementation.
  */
 export function createDefineTask(options: CreateDefineTaskOptions) {
-  return function defineBoundNamedTask<TIdentifier extends string, TPayload>(
+  // Keep the two-argument overload last: Parameters and ReturnType of an overloaded function resolve to its last signature.
+  function defineBoundNamedTask<TIdentifier extends string>(taskIdentifier: TIdentifier): BoundTaskDefinition<TIdentifier, unknown>
+  function defineBoundNamedTask<TIdentifier extends string, TPayload>(taskIdentifier: TIdentifier, task: Task<TPayload>): BoundNamedTask<TIdentifier, TPayload>
+  function defineBoundNamedTask<TIdentifier extends string, TPayload>(
     taskIdentifier: TIdentifier,
-    task: Task<TPayload>,
-  ): BoundNamedTask<TIdentifier, TPayload> {
-    const definedTask = defineTask(taskIdentifier, task) as BoundNamedTask<TIdentifier, TPayload>
-    definedTask.addJob = (payload, spec) => options.addJob(definedTask.taskIdentifier as string, payload, spec)
-    const { helpers: defaultHelpers } = options
-    if (defaultHelpers) {
-      const baseRun = definedTask.run
-      definedTask.run = (payload, helpers) =>
-        baseRun(payload, ({
-          defaultHelpers: manualHelpers,
-          payload: runPayload,
-          taskIdentifier: runTaskIdentifier,
-        }) => {
-          const configuredHelpers = resolveTaskHelpers(defaultHelpers, {
-            defaultHelpers: manualHelpers,
-            payload: runPayload,
-            taskIdentifier: runTaskIdentifier,
-          })
-
-          return resolveTaskHelpers(helpers, {
-            defaultHelpers: configuredHelpers,
-            payload: runPayload,
-            taskIdentifier: runTaskIdentifier,
-          })
-        })
-    }
-    return definedTask
+    task?: Task<TPayload>,
+  ): BoundTaskDefinition<TIdentifier, unknown> | BoundNamedTask<TIdentifier, TPayload> {
+    return task ? bindNamedTask(nameTask(task, taskIdentifier), options) : createBoundTaskDefinition(taskIdentifier, options)
   }
+  return defineBoundNamedTask
 }

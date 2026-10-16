@@ -6,7 +6,7 @@ import { resolveTaskHelpers } from "./taskHelpers"
 import type { Task, TaskResult } from "./tasks"
 
 /**
- * Run a task handler directly, building helpers for the manual run.
+ * Run a task function directly, building helpers for the manual run.
  */
 export function runTask<TPayload>(
   task: Task<TPayload>,
