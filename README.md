@@ -108,7 +108,6 @@ await sendEmail.run("user@example.com")
 By default, `run` provides a minimal `JobHelpers` object.
 The default manual helpers use graphile-worker's console logger and include a synthetic `helpers.job` for the manual run.
 Helpers that require a real worker or database context, such as `query`, `withPgClient`, `addJob`, `addJobs`, and `getQueueName`, throw a clear error.
-`helpers.abortSignal` never aborts during a manual run.
 
 If your task uses those helpers, pass them as the second argument. A partial object is shallow-merged onto the default helpers:
 
@@ -125,7 +124,8 @@ await sendEmail.run("user@example.com", ({ defaultHelpers, payload }) => ({
 }))
 ```
 
-When using a bound `defineTask`, you can configure helpers once for every task's `run`. Per-call helpers still override them:
+When using a bound `defineTask`, you can configure helpers once for every task's `run`.
+Per-call helpers still override them:
 
 ```ts
 const defineTask = createDefineTask({
@@ -133,3 +133,27 @@ const defineTask = createDefineTask({
   helpers: { query: myTestQuery },
 })
 ```
+
+### Cancelling a manual run
+
+By default, `helpers.abortSignal` never aborts during a manual run.
+
+A task supports cancellation by reacting to `helpers.abortSignal` or `helpers.abortPromise`.
+To cancel such a task during a manual run, pass `abortSignal`.
+Unless you also pass `abortPromise`, `helpers.abortPromise` rejects when the signal aborts, as in a worker run:
+
+```ts
+import { setTimeout } from "node:timers/promises"
+
+const pollFeed = defineTask("pollFeed", async (delay: number, helpers) => {
+  await setTimeout(delay, undefined, { signal: helpers.abortSignal })
+})
+
+const controller = new AbortController()
+const run = pollFeed.run(60_000, { abortSignal: controller.signal })
+controller.abort()
+await run // rejects with an AbortError
+```
+
+The same applies to helpers configured for a bound `defineTask`: a per-call `abortSignal` without `abortPromise` also replaces the configured `abortPromise`.
+A helpers factory must keep `abortSignal` and `abortPromise` consistent itself.

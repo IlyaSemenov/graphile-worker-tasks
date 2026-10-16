@@ -81,6 +81,56 @@ describe("createDefineTask", () => {
 
       expect(seen).toEqual([[perCallQuery, withPgClient]])
     })
+
+    describe("abort helpers", () => {
+      test("reuses one abortPromise for a configured abortSignal across runs", () => {
+        const addJob: AddJobFunction = async () => makeJob()
+        const defineBoundNamedTask = createDefineTask({ addJob, helpers: { abortSignal: new AbortController().signal } })
+        const abortPromises: Promise<void>[] = []
+        const task = defineBoundNamedTask("task1", (_payload: { foo: string }, helpers) => {
+          abortPromises.push(helpers.abortPromise)
+        })
+
+        task.run({ foo: "bar" })
+        task.run({ foo: "bar" })
+
+        expect(abortPromises[0]).toBe(abortPromises[1]!)
+      })
+
+      test("keeps a per-call abortPromise over a configured abortSignal", () => {
+        const addJob: AddJobFunction = async () => makeJob()
+        const defineBoundNamedTask = createDefineTask({ addJob, helpers: { abortSignal: new AbortController().signal } })
+        const perCallAbortPromise = new Promise<void>(() => {})
+        const abortPromises: Promise<void>[] = []
+        const task = defineBoundNamedTask("task1", (_payload: { foo: string }, helpers) => {
+          abortPromises.push(helpers.abortPromise)
+        })
+
+        task.run({ foo: "bar" }, { abortPromise: perCallAbortPromise })
+
+        expect(abortPromises[0]).toBe(perCallAbortPromise)
+      })
+
+      test("derives abortPromise from a per-call abortSignal over a configured one", async () => {
+        const addJob: AddJobFunction = async () => makeJob()
+        const configuredController = new AbortController()
+        const perCallController = new AbortController()
+        const defineBoundNamedTask = createDefineTask({ addJob, helpers: { abortSignal: configuredController.signal } })
+        const abortPromises: Promise<void>[] = []
+        const task = defineBoundNamedTask("task1", (_payload: { foo: string }, helpers) => {
+          abortPromises.push(helpers.abortPromise)
+        })
+
+        task.run({ foo: "bar" }, { abortSignal: perCallController.signal })
+        configuredController.abort(new Error("configured"))
+        const pending = Symbol("pending")
+
+        await expect(Promise.race([abortPromises[0]!, Promise.resolve(pending)])).resolves.toBe(pending)
+        const perCallReason = new Error("per-call")
+        perCallController.abort(perCallReason)
+        await expect(abortPromises[0]!).rejects.toBe(perCallReason)
+      })
+    })
   })
 
   test("creates tasks compatible with task collection helpers", () => {
