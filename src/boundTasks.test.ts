@@ -1,5 +1,5 @@
+import { describe, expect, test } from "bun:test"
 import type { AddJobFunction, Job, JobHelpers } from "graphile-worker"
-import { describe, expect, test } from "vitest"
 
 import { createDefineTask } from "./boundTasks"
 import { createTaskList, mergeTasks } from "./tasks"

@@ -2,7 +2,7 @@
   "name": "graphile-worker-tasks",
   "type": "module",
   "version": "2.2.1",
-  "packageManager": "pnpm@10.17.1+sha512.17c560fca4867ae9473a3899ad84a88334914f379be46d455cbf92e5cf4b39d34985d452d2583baf19967fa76cb5c17bc9e245529d0b98745721aa7200ecaf7a",
+  "packageManager": "bun@1.4.3",
   "description": "Organize and collect graphile-worker tasks",
   "author": "Ilya Semenov",
   "license": "MIT",
@@ -33,10 +33,10 @@
   },
   "scripts": {
     "prepare": "lefthook install",
-    "prepublishOnly": "pnpm run build",
+    "prepublishOnly": "bun run build",
     "build": "tsdown",
     "lint": "eslint --fix .",
-    "test": "vitest run",
+    "test": "bun test",
     "types": "tsc"
   },
   "peerDependencies": {
@@ -46,12 +46,13 @@
     "@arethetypeswrong/core": "^0.18.5",
     "@changesets/cli": "^3.0.3",
     "@ilyasemenov/eslint-config": "^1.5.2",
+    "@tsconfig/bun": "^1.0.10",
+    "@types/bun": "^1.4.0",
     "@typescript/native": "npm:typescript@~7.0.2",
     "eslint": "^9.39.4",
+    "graphile-worker": "^0.16.6",
     "publint": "^0.3.25",
-    "tsconfig-vite-node": "^1.1.2",
-    "tsdown": "^0.22.14",
-    "typescript": "~6.0.3",
-    "vitest": "^3.2.4"
+    "tsdown": "^0.23.1",
+    "typescript": "~6.0.3"
   }
 }

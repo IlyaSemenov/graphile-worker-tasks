@@ -1,5 +1,5 @@
+import { expectTypeOf, test } from "bun:test"
 import type { Job } from "graphile-worker"
-import { expectTypeOf, test } from "vitest"
 
 import type { BoundNamedTask } from "./boundTasks"
 import { createDefineTask } from "./boundTasks"

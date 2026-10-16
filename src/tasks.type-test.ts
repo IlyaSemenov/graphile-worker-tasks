@@ -1,5 +1,5 @@
+import { expectTypeOf, test } from "bun:test"
 import type { JobHelpers } from "graphile-worker"
-import { expectTypeOf, test } from "vitest"
 
 import type { AnyNamedTask, GraphileWorkerTasks } from "./tasks"
 import { defineTask, mergeTasks } from "./tasks"
