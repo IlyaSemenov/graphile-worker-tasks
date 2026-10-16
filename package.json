@@ -6,10 +6,12 @@
   "description": "Organize and collect graphile-worker tasks",
   "author": "Ilya Semenov",
   "license": "MIT",
+  "homepage": "https://github.com/IlyaSemenov/graphile-worker-tasks#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/IlyaSemenov/graphile-worker-tasks"
+    "url": "git+https://github.com/IlyaSemenov/graphile-worker-tasks.git"
   },
+  "bugs": "https://github.com/IlyaSemenov/graphile-worker-tasks/issues",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -24,6 +26,10 @@
     "src",
     "!src/**/*.test.*"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "prepare": "husky",
     "prepublishOnly": "pnpm build",

@@ -15,7 +15,7 @@
     "toml"
   ],
   "search.exclude": {
-    "/packages/*/dist": true,
+    "dist": true,
     "node_modules": true
   }
 }
