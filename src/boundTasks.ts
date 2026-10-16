@@ -31,9 +31,9 @@ export type BoundTaskDefinition<TIdentifier extends string, TPayload> = {
    */
   withPayload<TNewPayload>(): BoundTaskDefinition<TIdentifier, TNewPayload>
   /**
-   * Create the task implementing this definition, bound to the same addJob implementation and createDefineTask helpers.
+   * Create the task implementing this definition, with the default helpers configured by createDefineTask.
    */
-  implement(task: Task<TPayload>): BoundNamedTask<TIdentifier, TPayload>
+  implement(task: Task<TPayload>): NamedTask<TIdentifier, TPayload>
 }
 
 /**
@@ -45,7 +45,7 @@ export type CreateDefineTaskOptions = {
    */
   addJob: AddJobFunction
   /**
-   * Default helpers used by BoundNamedTask.run, overridable per call.
+   * Default helpers used by run of the tasks created through this defineTask, overridable per call.
    */
   helpers?: TaskHelpers
 }

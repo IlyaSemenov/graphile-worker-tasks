@@ -3,7 +3,7 @@ import type { Job, TaskSpec } from "graphile-worker"
 
 import type { BoundNamedTask, BoundTaskDefinition } from "./boundTasks"
 import { createDefineTask } from "./boundTasks"
-import type { GraphileWorkerTasks, Task } from "./tasks"
+import type { GraphileWorkerTasks, NamedTask, Task } from "./tasks"
 import { defineTask } from "./tasks"
 
 function makeJob(): Job {
@@ -60,8 +60,10 @@ test("bound task definition", () => {
   const task = boundDefinition.implement((payload) => {
     expectTypeOf(payload).toEqualTypeOf<{ foo: string }>()
   })
-  expectTypeOf(task).toEqualTypeOf<BoundNamedTask<"task1", { foo: string }>>()
+  expectTypeOf(task).toEqualTypeOf<NamedTask<"task1", { foo: string }>>()
 
+  // @ts-expect-error Producers enqueue through the definition, not its implementation.
+  task.addJob({ foo: "bar" })
   // @ts-expect-error A bound definition cannot be bound again.
   boundDefinition.withAddJob(addJob)
   // @ts-expect-error A bound definition cannot be bound again.

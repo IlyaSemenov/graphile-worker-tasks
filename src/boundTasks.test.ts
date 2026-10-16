@@ -45,15 +45,15 @@ describe("createDefineTask", () => {
     })
     const definition = defineBoundNamedTask("task1").withPayload<{ foo: string }>()
 
-    await definition.addJob({ foo: "bar" })
+    await definition.addJob({ foo: "bar" }, { priority: 1 })
     const task = definition.implement((payload, helpers) => {
       runCalls.push([payload, helpers.query])
     })
-    await task.addJob({ foo: "baz" }, { priority: 1 })
     await task.run({ foo: "qux" })
 
-    expect(calls).toEqual([["task1", { foo: "bar" }, undefined], ["task1", { foo: "baz" }, { priority: 1 }]])
+    expect(calls).toEqual([["task1", { foo: "bar" }, { priority: 1 }]])
     expect(runCalls).toEqual([[{ foo: "qux" }, query]])
+    expect("addJob" in task).toBe(false)
   })
 
   describe("helpers option", () => {
@@ -217,33 +217,28 @@ describe("withAddJob", () => {
     })
 
     const taskFunction = () => {}
-    const task1 = boundDefinition1.implement(taskFunction)
-    const task2 = boundDefinition2.implement(taskFunction)
+    boundDefinition1.implement(taskFunction)
+    boundDefinition2.implement(taskFunction)
 
     await boundDefinition1.addJob("foo")
     await boundDefinition2.addJob("bar")
-    await task1.addJob("baz")
-    await task2.addJob("qux")
 
-    expect(calls).toEqual([["addJob1", "foo"], ["addJob2", "bar"], ["addJob1", "baz"], ["addJob2", "qux"]])
+    expect(calls).toEqual([["addJob1", "foo"], ["addJob2", "bar"]])
     expect("addJob" in definition).toBe(false)
     expect(["taskIdentifier", "run", "addJob"].filter(key => key in taskFunction)).toEqual([])
   })
 
-  test("implements a task with the bound addJob", async () => {
+  test("implements a task without addJob", async () => {
     const calls: unknown[][] = []
-    const boundDefinition = defineTask("task1").withPayload<string>().withAddJob(async (identifier, payload) => {
-      calls.push(["addJob", identifier, payload])
-      return makeJob()
-    })
+    const boundDefinition = defineTask("task1").withPayload<string>().withAddJob(async () => makeJob())
     const task = boundDefinition.implement((payload, helpers) => {
-      calls.push(["run", payload, helpers.job.task_identifier])
+      calls.push([payload, helpers.job.task_identifier])
     })
 
-    await task.addJob("foo")
-    await task.run("bar")
+    await task.run("foo")
 
     expect(task.taskIdentifier).toBe("task1")
-    expect(calls).toEqual([["addJob", "task1", "foo"], ["run", "bar", "task1"]])
+    expect(calls).toEqual([["foo", "task1"]])
+    expect("addJob" in task).toBe(false)
   })
 })

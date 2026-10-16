@@ -100,7 +100,7 @@ For example, to enqueue jobs within the active Orchid ORM transaction, use `addJ
 ### Binding every task at once
 
 To bind all tasks to one `addJob` implementation, create a bound `defineTask` once and use it in place of the imported one.
-Its definitions enqueue jobs, and their `implement` returns a task that can also enqueue itself:
+Producers enqueue jobs through its definitions, and `implement` returns a plain task for the worker:
 
 ```ts
 import { createDefineTask } from "graphile-worker-tasks"

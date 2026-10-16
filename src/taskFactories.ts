@@ -1,5 +1,6 @@
 import type { BoundNamedTask, BoundTaskDefinition, CreateDefineTaskOptions } from "./boundTasks"
 import { runTask } from "./run"
+import type { TaskHelpers } from "./taskHelpers"
 import { resolveTaskHelpers } from "./taskHelpers"
 import type { NamedTask, Task, TaskDefinition } from "./tasks"
 
@@ -26,7 +27,7 @@ export function createBoundTaskDefinition<TIdentifier extends string, TPayload>(
     taskIdentifier,
     addJob: (payload, spec) => options.addJob(taskIdentifier as string, payload, spec),
     withPayload: <TNewPayload>() => createBoundTaskDefinition<TIdentifier, TNewPayload>(taskIdentifier, options),
-    implement: task => bindNamedTask(nameTask(wrapTask(task), taskIdentifier), options),
+    implement: task => applyDefaultHelpers(nameTask(wrapTask(task), taskIdentifier), options.helpers),
   }
 }
 
@@ -52,12 +53,21 @@ export function bindNamedTask<TIdentifier extends string, TPayload>(
   task: NamedTask<TIdentifier, TPayload>,
   options: CreateDefineTaskOptions,
 ): BoundNamedTask<TIdentifier, TPayload> {
-  const boundTask = task as BoundNamedTask<TIdentifier, TPayload>
+  const boundTask = applyDefaultHelpers(task, options.helpers) as BoundNamedTask<TIdentifier, TPayload>
   boundTask.addJob = (payload, spec) => options.addJob(boundTask.taskIdentifier as string, payload, spec)
-  const { helpers: defaultHelpers } = options
+  return boundTask
+}
+
+/**
+ * Layer the given default helpers under the per-call helpers of the task's run, mutating and returning the task.
+ */
+function applyDefaultHelpers<TIdentifier extends string, TPayload>(
+  task: NamedTask<TIdentifier, TPayload>,
+  defaultHelpers: TaskHelpers | undefined,
+): NamedTask<TIdentifier, TPayload> {
   if (defaultHelpers) {
-    const baseRun = boundTask.run
-    boundTask.run = (payload, helpers) =>
+    const baseRun = task.run
+    task.run = (payload, helpers) =>
       baseRun(payload, ({
         defaultHelpers: manualHelpers,
         payload: runPayload,
@@ -76,5 +86,5 @@ export function bindNamedTask<TIdentifier extends string, TPayload>(
         })
       })
   }
-  return boundTask
+  return task
 }
