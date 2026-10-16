@@ -36,7 +36,8 @@
     "prepublishOnly": "pnpm run build",
     "build": "tsdown",
     "lint": "eslint --fix .",
-    "test": "vitest run --typecheck"
+    "test": "vitest run",
+    "types": "tsc"
   },
   "peerDependencies": {
     "graphile-worker": ">=0.12"

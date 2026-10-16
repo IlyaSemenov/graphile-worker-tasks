@@ -12,9 +12,9 @@ Do not catalog files or restate information evident from their names and locatio
 ## Scope
 
 - Keep production code in `src/`.
-- Keep focused module tests beside their source as `*.test.ts`.
-- Keep focused type tests beside their source as `*.test-d.ts`.
+- Keep focused module tests beside their source.
 - Keep integration and package-boundary tests in `tests/`.
+- Name runtime tests `*.test.ts` and compile-only type tests `*.type-test.ts`.
 - Keep `src/index.ts` limited to explicit public exports.
 - Treat `package.json` exports and supported runtimes as public contracts.
 
@@ -61,5 +61,6 @@ Describe the user-visible change.
 
 ## Checks
 
-- Run the `test` script when behavior or public types change; it also typechecks `*.test-d.ts`.
+- Run the `types` script when public types or TypeScript configuration change.
+- Run the `test` script when behavior changes.
 - Run the `build` script when package exports, declarations, or supported runtimes change.
