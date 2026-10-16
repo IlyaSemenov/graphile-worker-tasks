@@ -12,19 +12,20 @@
     "url": "git+https://github.com/IlyaSemenov/graphile-worker-tasks.git"
   },
   "bugs": "https://github.com/IlyaSemenov/graphile-worker-tasks/issues",
+  "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
-  "main": "dist/index.cjs",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "files": [
-    "dist",
-    "src",
-    "!src/**/*.test.*"
+    "README.md",
+    "dist"
   ],
   "publishConfig": {
     "access": "public",
@@ -32,8 +33,8 @@
   },
   "scripts": {
     "prepare": "lefthook install",
-    "prepublishOnly": "pnpm build",
-    "build": "tsup",
+    "prepublishOnly": "pnpm run build",
+    "build": "tsdown",
     "lint": "eslint --fix .",
     "test": "vitest run --typecheck"
   },
@@ -41,11 +42,13 @@
     "graphile-worker": ">=0.12"
   },
   "devDependencies": {
+    "@arethetypeswrong/core": "^0.18.5",
     "@changesets/cli": "^2.27.10",
     "@ilyasemenov/eslint-config": "^1.5.2",
     "eslint": "^9.39.4",
+    "publint": "^0.3.25",
     "tsconfig-vite-node": "^1.1.2",
-    "tsup": "^8.3.5",
+    "tsdown": "^0.22.14",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
