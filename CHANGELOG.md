@@ -1,5 +1,11 @@
 # graphile-worker-tasks
 
+## 2.5.0
+
+### Minor Changes
+
+- 513e709: Add `createTestJobs` in `graphile-worker-tasks/testing`, an `addJob` that records jobs for assertions in tests.
+
 ## 2.4.0
 
 ### Minor Changes
