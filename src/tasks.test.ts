@@ -26,6 +26,12 @@ describe("createTaskList", () => {
     expect(createTaskList([task1, task2])).toEqual({ task1, task2 })
   })
 
+  test("rejects duplicate task identifiers", () => {
+    const definition = defineTask("task1")
+
+    expect(() => createTaskList([definition.implement(() => {}), definition.implement(() => {})])).toThrow("Task identifiers must be unique.")
+  })
+
   test("rejects an unimplemented task definition", () => {
     const definition = defineTask("task1")
 

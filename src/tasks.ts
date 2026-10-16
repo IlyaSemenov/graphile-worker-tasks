@@ -88,10 +88,7 @@ export function defineTask<TIdentifier extends string, TPayload>(
  * Merge lists of tasks into a single list.
  */
 export function mergeTasks<T extends AnyNamedTask>(tasks: T[]): T[] {
-  const taskIdentifiers = new Set(tasks.map(task => task.taskIdentifier))
-  if (taskIdentifiers.size !== tasks.length) {
-    throw new Error("Task identifiers must be unique.")
-  }
+  assertUniqueTaskIdentifiers(tasks)
   return tasks
 }
 
@@ -106,6 +103,7 @@ export function createTaskList(tasks: AnyNamedTask[]): TaskList {
       throw new TypeError(`Task "${(task as { taskIdentifier?: unknown }).taskIdentifier}" is not implemented. Pass the task returned by implement() instead of its definition.`)
     }
   }
+  assertUniqueTaskIdentifiers(tasks)
   // AnyNamedTask erases the payload to `never` so heterogeneous task lists type-check;
   // that makes it unassignable to TaskList's `Task<any>` value type (payload `unknown`), hence the cast.
   return Object.fromEntries(tasks.map(task => [task.taskIdentifier, task])) as unknown as TaskList
@@ -133,3 +131,10 @@ export type GraphileWorkerTasks<TTasks extends AnyNamedTask[]> = {
 
 // Somehow this needs to be a separate type, it won't work if used literally in GraphileWorkerTasks.
 type InferNamedTaskPayload<T extends AnyNamedTask, K extends string> = T extends NamedTask<K, infer Args> ? Args : never
+
+function assertUniqueTaskIdentifiers(tasks: AnyNamedTask[]): void {
+  const taskIdentifiers = new Set(tasks.map(task => task.taskIdentifier))
+  if (taskIdentifiers.size !== tasks.length) {
+    throw new Error("Task identifiers must be unique.")
+  }
+}
