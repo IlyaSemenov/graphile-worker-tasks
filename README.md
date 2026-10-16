@@ -175,18 +175,20 @@ type TenantJobPayload<TPayload> = { schema: string, payload: TPayload }
 const defineTask = createDefineTask({ addJob })
 
 export function defineTenantTask<TIdentifier extends string>(taskIdentifier: TIdentifier) {
-  return {
-    withPayload: <TPayload>() => wrapTaskDefinition(
-      defineTask(`tenant:${taskIdentifier}`).withPayload<TenantJobPayload<TPayload>>(),
-      {
-        encodePayload: (payload: TPayload) => ({ schema: getTenantSchema(), payload }),
-        encodeSpec: (spec, { schema }) => prefixTaskSpec(spec, `tenant:${schema}:`),
-        wrapTask: task => ({ schema, payload }, helpers) => withTenantSchema(schema, () => task(payload, helpers)),
-      },
-    ),
-  }
+  const createDefinition = <TPayload>() => wrapTaskDefinition(
+    defineTask(`tenant:${taskIdentifier}`).withPayload<TenantJobPayload<TPayload>>(),
+    {
+      encodePayload: (payload: TPayload) => ({ schema: getTenantSchema(), payload }),
+      encodeSpec: (spec, { schema }) => prefixTaskSpec(spec, `tenant:${schema}:`),
+      wrapTask: task => ({ schema, payload }, helpers) => withTenantSchema(schema, () => task(payload, helpers)),
+    },
+  )
+  return Object.assign(createDefinition<unknown>(), { withPayload: createDefinition })
 }
 ```
+
+A wrapped definition has no `withPayload`, because the wrapper cannot derive the job payload type from a new inner payload type, so the factory creates a definition for each payload type.
+Like `defineTask(taskIdentifier)`, the factory returns a definition with an `unknown` payload, so `defineTenantTask("cleanup").implement(...)` works without `withPayload`.
 
 The wrapped definition keeps the identifier and the job payload of the given definition, while its `addJob` and the `run` of its task take the inner payload, and the task function passed to `implement` receives it:
 

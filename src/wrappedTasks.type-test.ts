@@ -17,17 +17,25 @@ const addJob = (async () => ({}) as Job) as AddJobFunction
 const defineJobTask = createDefineTask({ addJob })
 
 function defineTenantTask<TIdentifier extends string>(taskIdentifier: TIdentifier) {
-  return {
-    withPayload: <TPayload>() => wrapTaskDefinition(
-      defineJobTask(`tenant:${taskIdentifier}`).withPayload<TenantJobPayload<TPayload>>(),
-      {
-        encodePayload: (payload: TPayload) => ({ schema: getTenantSchema(), payload }),
-        encodeSpec: (spec, { schema }) => prefixTaskSpec(spec, `tenant:${schema}:`),
-        wrapTask: task => ({ schema, payload }, helpers) => withTenantSchema(schema, () => task(payload, helpers)),
-      },
-    ),
-  }
+  const createDefinition = <TPayload>() => wrapTaskDefinition(
+    defineJobTask(`tenant:${taskIdentifier}`).withPayload<TenantJobPayload<TPayload>>(),
+    {
+      encodePayload: (payload: TPayload) => ({ schema: getTenantSchema(), payload }),
+      encodeSpec: (spec, { schema }) => prefixTaskSpec(spec, `tenant:${schema}:`),
+      wrapTask: task => ({ schema, payload }, helpers) => withTenantSchema(schema, () => task(payload, helpers)),
+    },
+  )
+  return Object.assign(createDefinition<unknown>(), { withPayload: createDefinition })
 }
+
+test("bound wrapped definition without payload", () => {
+  const definition = defineTenantTask("cleanup")
+  expectTypeOf(definition.taskIdentifier).toEqualTypeOf<"tenant:cleanup">()
+  expectTypeOf<Parameters<typeof definition.addJob>>().toEqualTypeOf<[payload: unknown, spec?: TaskSpec]>()
+
+  const task = definition.implement(() => {})
+  expectTypeOf(task).toEqualTypeOf<NamedTask<"tenant:cleanup", TenantJobPayload<unknown>, unknown>>()
+})
 
 test("bound wrapped definition", () => {
   const definition = defineTenantTask("sendEmail").withPayload<{ to: string }>()
