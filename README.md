@@ -105,7 +105,10 @@ Tasks can be run directly, which is useful in tests:
 await sendEmail.run("user@example.com")
 ```
 
-By default, `run` provides a minimal `JobHelpers` object. The default manual helpers use graphile-worker's console logger and include a synthetic `helpers.job` for the manual run. Helpers that require a real worker or database context, such as `query`, `withPgClient`, `addJob`, and `getQueueName`, throw a clear error.
+By default, `run` provides a minimal `JobHelpers` object.
+The default manual helpers use graphile-worker's console logger and include a synthetic `helpers.job` for the manual run.
+Helpers that require a real worker or database context, such as `query`, `withPgClient`, `addJob`, `addJobs`, and `getQueueName`, throw a clear error.
+`helpers.abortSignal` never aborts during a manual run.
 
 If your task uses those helpers, pass them as the second argument. A partial object is shallow-merged onto the default helpers:
 

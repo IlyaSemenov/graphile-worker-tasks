@@ -52,6 +52,17 @@ describe("task.run", () => {
 
     await expect(task.run({ foo: "bar" })).rejects.toThrow("Cannot use helpers.query during manual task run.")
   })
+
+  test("provides a non-aborted signal in default helpers", () => {
+    const aborted: boolean[] = []
+    const task = defineTask("task1", (_payload: { foo: string }, helpers) => {
+      aborted.push(helpers.abortSignal.aborted)
+    })
+
+    task.run({ foo: "bar" })
+
+    expect(aborted).toEqual([false])
+  })
 })
 
 test("runTask runs a bare task handler", async () => {

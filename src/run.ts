@@ -52,6 +52,9 @@ function createDefaultTaskHelpers<TPayload>({ payload, taskIdentifier }: Omit<Ta
     addJob: () => {
       throw new Error("Cannot use helpers.addJob during manual task run. Pass helpers to provide an addJob implementation.")
     },
+    addJobs: () => {
+      throw new Error("Cannot use helpers.addJobs during manual task run. Pass helpers to provide an addJobs implementation.")
+    },
     withPgClient: () => {
       throw new Error("Cannot use helpers.withPgClient during manual task run. Pass helpers to provide a database client.")
     },
@@ -61,5 +64,8 @@ function createDefaultTaskHelpers<TPayload>({ payload, taskIdentifier }: Omit<Ta
     getQueueName: () => {
       throw new Error("Cannot use helpers.getQueueName during manual task run. Pass helpers to provide queue metadata.")
     },
+    // A manual run has no worker to request shutdown, so the signal never aborts and the promise never settles.
+    abortSignal: new AbortController().signal,
+    abortPromise: new Promise(() => {}),
   }
 }
