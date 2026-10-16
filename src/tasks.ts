@@ -1,8 +1,12 @@
-import type { AddJobFunction, JobHelpers, PromiseOrDirect, TaskList } from "graphile-worker"
+import type { AddJobFunction, JobHelpers, TaskList } from "graphile-worker"
 
 import type { BoundTaskDefinition } from "./boundTasks"
 import { createTaskDefinition, nameTask } from "./taskFactories"
 import type { TaskHelpers } from "./taskHelpers"
+
+// Copied from graphile-worker, which exports it only since 0.14.
+// Import it from graphile-worker instead once the peer dependency requires graphile-worker 0.14 or later.
+type PromiseOrDirect<T> = Promise<T> | T
 
 // Copy the return type from the graphile-worker package.
 // We should rather be using ReturnType<GraphileWorkerTask> here,
