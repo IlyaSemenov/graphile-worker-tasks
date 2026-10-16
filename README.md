@@ -48,6 +48,8 @@ export const tasks = mergeTasks([
 ])
 ```
 
+Keep `*.task.ts` modules and `tasks.ts` worker-only: code outside the worker that enqueues jobs (producers) must not import them, directly or through barrel files.
+
 Run the worker with these tasks:
 
 ```ts
@@ -138,28 +140,56 @@ If only using the bound `addJob`, you can omit augmenting `namespace GraphileWor
 
 ### Defining a task with its implementation
 
-`defineTask` also accepts the task function directly and returns it annotated with the task identifier:
+A task that no producer enqueues, such as a cron task, can be defined together with its implementation.
+`defineTask` accepts the task function directly and returns it annotated with the task identifier:
 
 ```ts
-export const sendEmailTask = defineTask("sendEmail", async ({ to }: { to: string }) => {
-  await sendEmail(to)
+// tasks/cleanup.task.ts
+import { defineTask } from "graphile-worker-tasks"
+
+import { cleanup } from "../cleanup"
+
+export default defineTask("cleanup", async () => {
+  await cleanup()
 })
 ```
 
-The same form of a bound `defineTask` also adds `addJob` to the task:
+The worker references it in a cron item by its identifier:
 
 ```ts
-const defineTask = createDefineTask({ addJob })
+import { parseCronItems } from "graphile-worker"
 
-export const sendEmailTask = defineTask("sendEmail", async ({ to }: { to: string }) => {
-  await sendEmail(to)
-})
+import cleanup from "./tasks/cleanup.task"
 
-await sendEmailTask.addJob({ to: "user@example.com" })
+const parsedCronItems = parseCronItems([{ task: cleanup.taskIdentifier, match: "0 4 * * *" }])
 ```
 
-Such a task brings its implementation and dependencies into every module that imports it.
-To split it, move the identifier and payload type to a definition and keep the implementation in a worker-only module:
+To reuse the schedule elsewhere, give the task a separate definition and export the cron item next to it: the cron item needs only `taskIdentifier`.
+A task without payload does not need `withPayload`:
+
+```ts
+// tasks/cleanup.ts
+import type { CronItem } from "graphile-worker"
+import { defineTask } from "graphile-worker-tasks"
+
+export const cleanupTask = defineTask("cleanup")
+
+export const cleanupCronItem: CronItem = { task: cleanupTask.taskIdentifier, match: "0 4 * * *" }
+```
+
+```ts
+// tasks/cleanup.task.ts
+import { cleanup } from "../cleanup"
+
+import { cleanupTask } from "./cleanup"
+
+export default cleanupTask.implement(async () => {
+  await cleanup()
+})
+```
+
+A task defined together with its implementation brings its implementation and dependencies into every module that imports it.
+When producers need to enqueue it, move the identifier and payload type to a definition and keep the implementation in a worker-only module:
 
 ```ts
 // Before
