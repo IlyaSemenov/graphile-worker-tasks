@@ -1,7 +1,7 @@
 {
   "name": "graphile-worker-tasks",
   "type": "module",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "packageManager": "bun@1.4.3",
   "description": "Organize and collect graphile-worker tasks",
   "author": "Ilya Semenov",

@@ -1,5 +1,13 @@
 # graphile-worker-tasks
 
+## 2.4.0
+
+### Minor Changes
+
+- dd28a3c: Accept task definitions in `GraphileWorkerTasks`, and add the `TaskPayload` and `TaskJobPayload` types for the payload a task accepts and the payload stored in its jobs.
+- 63847cc: Add `prefixTaskSpec` to prefix the job key and the queue name of a job spec, for example in `encodeSpec` of a task definition wrapper.
+- 63847cc: Add `wrapTaskDefinition` to create a task definition typed by an inner payload while its jobs store a payload and spec built by the wrapper.
+
 ## 2.3.1
 
 ### Patch Changes
