@@ -1,5 +1,19 @@
 # graphile-worker-tasks
 
+## 2.3.0
+
+### Minor Changes
+
+- cde869d: Add standalone task definitions: `defineTask(name).withPayload<T>()` declares a task without an implementation, `implement()` creates the task, and `withAddJob()` or `createDefineTask()` binds it to `addJob` for enqueueing.
+
+### Patch Changes
+
+- 72f94fa: Publish only compiled files, without sources and sourcemaps.
+- 47a04be: Provide `abortSignal`, `abortPromise`, and `addJobs` in the default `task.run` helpers.
+- f6eb0e5: Make `helpers.abortPromise` reject when an `abortSignal` passed to `task.run` aborts.
+- 8a772de: Make `createTaskList` reject tasks with duplicate identifiers instead of keeping only the last one.
+- b2b17ca: Fix the `TaskResult` type with graphile-worker 0.12 and 0.13.
+
 ## 2.2.1
 
 ### Patch Changes
