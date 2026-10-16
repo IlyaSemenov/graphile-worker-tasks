@@ -114,14 +114,28 @@ export function createTaskList(tasks: AnyNamedTask[]): TaskList {
 }
 
 /**
- * Usage:
+ * The payload that `addJob` and `run` of the given task or task definition accept.
+ */
+export type TaskPayload<T> = T extends { implement(task: Task<infer TPayload>): unknown }
+  ? TPayload
+  : T extends { run(payload: infer TPayload, helpers?: never): unknown }
+    ? TPayload
+    : never
+
+/**
+ * The payload stored in the jobs of the given task or task definition and passed to its task function.
+ */
+export type TaskJobPayload<T> = T extends { implement(task: never): infer TTask }
+  ? TaskJobPayload<TTask>
+  : T extends (payload: infer TJobPayload, helpers: JobHelpers) => unknown
+    ? TJobPayload
+    : never
+
+/**
+ * Map the identifiers of the given tasks or task definitions to their job payloads,
+ * for extending `GraphileWorker.Tasks`:
  *
  * ```ts
- * const tasks = mergeTasks(
- *   defineTask(...),
- *   defineTask(...),
- * )
- *
  * declare global {
  *   namespace GraphileWorker {
  *     interface Tasks extends GraphileWorkerTasks<typeof tasks> {}
@@ -129,12 +143,9 @@ export function createTaskList(tasks: AnyNamedTask[]): TaskList {
  * }
  * ```
  */
-export type GraphileWorkerTasks<TTasks extends AnyNamedTask[]> = {
-  [K in TTasks[number]["taskIdentifier"]]: InferNamedTaskPayload<TTasks[number], K>
+export type GraphileWorkerTasks<TTasks extends readonly { readonly taskIdentifier: string }[]> = {
+  [TTask in TTasks[number] as TTask["taskIdentifier"]]: TaskJobPayload<TTask>
 }
-
-// Somehow this needs to be a separate type, it won't work if used literally in GraphileWorkerTasks.
-type InferNamedTaskPayload<T extends AnyNamedTask, K extends string> = T extends NamedTask<K, infer Args> ? Args : never
 
 function assertUniqueTaskIdentifiers(tasks: AnyNamedTask[]): void {
   const taskIdentifiers = new Set(tasks.map(task => task.taskIdentifier))

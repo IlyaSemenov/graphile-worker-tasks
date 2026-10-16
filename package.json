@@ -37,7 +37,7 @@
     "build": "tsdown",
     "lint": "eslint --fix .",
     "test": "bun test",
-    "types": "tsc"
+    "types": "tsc && tsc -p tests/global-tasks"
   },
   "peerDependencies": {
     "graphile-worker": ">=0.12"

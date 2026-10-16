@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "graphile-worker-tasks": ["../../src/index.ts"]
+    }
+  },
+  "include": ["*.ts"]
+}

@@ -68,9 +68,25 @@ await run({
 Extend `GraphileWorker.Tasks` to ensure the `graphile-worker` tooling picks up the types:
 
 ```ts
+import type { GraphileWorkerTasks } from "graphile-worker-tasks"
+
 declare global {
   namespace GraphileWorker {
     interface Tasks extends GraphileWorkerTasks<typeof tasks> {}
+  }
+}
+```
+
+To extend it where only definitions are imported, such as in producer code, list the definitions instead:
+
+```ts
+import type { GraphileWorkerTasks } from "graphile-worker-tasks"
+
+import { sendEmailTask } from "./tasks/sendEmail"
+
+declare global {
+  namespace GraphileWorker {
+    interface Tasks extends GraphileWorkerTasks<[typeof sendEmailTask]> {}
   }
 }
 ```
@@ -114,6 +130,8 @@ await sendEmailTask.addJob({ to: "user@example.com" }, { maxAttempts: 5 })
 ```
 
 The producer imports the definition, not the task, so the implementation and its dependencies stay out of the producer's module graph.
+
+`TaskPayload<typeof sendEmailTask>` is the payload type that `addJob` accepts, for example in test helpers that check enqueued jobs.
 
 For example, to enqueue jobs within the active Orchid ORM transaction, use `addJob` from [graphile-worker-orchid](https://github.com/IlyaSemenov/graphile-worker-orchid).
 

@@ -1,7 +1,7 @@
 import { expectTypeOf, test } from "bun:test"
-import type { JobHelpers } from "graphile-worker"
+import type { AddJobFunction, JobHelpers } from "graphile-worker"
 
-import type { AnyNamedTask, GraphileWorkerTasks, NamedTask, Task, TaskDefinition } from "./tasks"
+import type { AnyNamedTask, GraphileWorkerTasks, NamedTask, Task, TaskDefinition, TaskJobPayload, TaskPayload } from "./tasks"
 import { createTaskList, defineTask, mergeTasks } from "./tasks"
 
 test("defineTask, GraphileWorkerTasks", () => {
@@ -89,4 +89,37 @@ test("task definition", () => {
   createTaskList([objectDefinition])
   // @ts-expect-error A definition is not implemented.
   mergeTasks([task1, objectDefinition])
+})
+
+test("payload types", () => {
+  const definition = defineTask("task1").withPayload<{ foo: string }>()
+  const _boundDefinition = definition.withAddJob((async () => {}) as unknown as AddJobFunction)
+  const _task = definition.implement(() => {})
+  const _legacyTask = defineTask("task2", (_foo: number) => {})
+  const _untypedDefinition = defineTask("task3")
+
+  expectTypeOf<TaskPayload<typeof definition>>().toEqualTypeOf<{ foo: string }>()
+  expectTypeOf<TaskPayload<typeof _boundDefinition>>().toEqualTypeOf<{ foo: string }>()
+  expectTypeOf<TaskPayload<typeof _task>>().toEqualTypeOf<{ foo: string }>()
+  expectTypeOf<TaskPayload<typeof _legacyTask>>().toEqualTypeOf<number>()
+  expectTypeOf<TaskPayload<typeof _untypedDefinition>>().toEqualTypeOf<unknown>()
+
+  expectTypeOf<TaskJobPayload<typeof definition>>().toEqualTypeOf<{ foo: string }>()
+  expectTypeOf<TaskJobPayload<typeof _boundDefinition>>().toEqualTypeOf<{ foo: string }>()
+  expectTypeOf<TaskJobPayload<typeof _task>>().toEqualTypeOf<{ foo: string }>()
+  expectTypeOf<TaskJobPayload<typeof _legacyTask>>().toEqualTypeOf<number>()
+})
+
+test("GraphileWorkerTasks from definitions", () => {
+  const _definition = defineTask("task1").withPayload<{ foo: string }>()
+  const _boundDefinition = defineTask("task2").withPayload<number>().withAddJob((async () => {}) as unknown as AddJobFunction)
+  const _task = defineTask("task3", (_foo: boolean) => {})
+
+  interface Tasks extends GraphileWorkerTasks<[typeof _definition, typeof _boundDefinition, typeof _task]> {}
+
+  expectTypeOf<Tasks>().toEqualTypeOf<{
+    task1: { foo: string }
+    task2: number
+    task3: boolean
+  }>()
 })
