@@ -9,7 +9,7 @@ export type TaskHelpersContext<TPayload = unknown> = {
    */
   taskIdentifier: string
   /**
-   * Payload passed to the manual run.
+   * Job payload passed to the task function.
    */
   payload: TPayload
   /**

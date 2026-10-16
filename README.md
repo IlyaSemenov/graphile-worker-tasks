@@ -158,6 +158,81 @@ await sendEmailTask.addJob({ to: "user@example.com" })
 
 If only using the bound `addJob`, you can omit augmenting `namespace GraphileWorker`.
 
+### Wrapping tasks
+
+Wrap a definition to transform its jobs on the way in and its task function on the way out.
+For example, a multi-tenant app can store the tenant with each payload and run the task in that tenant's context:
+
+```ts
+// tasks/defineTenantTask.ts
+import { createDefineTask, prefixTaskSpec, wrapTaskDefinition } from "graphile-worker-tasks"
+
+import { addJob } from "../my-add-job"
+import { getTenantSchema, withTenantSchema } from "../tenants"
+
+type TenantJobPayload<TPayload> = { schema: string, payload: TPayload }
+
+const defineTask = createDefineTask({ addJob })
+
+export function defineTenantTask<TIdentifier extends string>(taskIdentifier: TIdentifier) {
+  return {
+    withPayload: <TPayload>() => wrapTaskDefinition(
+      defineTask(`tenant:${taskIdentifier}`).withPayload<TenantJobPayload<TPayload>>(),
+      {
+        encodePayload: (payload: TPayload) => ({ schema: getTenantSchema(), payload }),
+        encodeSpec: (spec, { schema }) => prefixTaskSpec(spec, `tenant:${schema}:`),
+        wrapTask: task => ({ schema, payload }, helpers) => withTenantSchema(schema, () => task(payload, helpers)),
+      },
+    ),
+  }
+}
+```
+
+The wrapped definition keeps the identifier and the job payload of the given definition, while its `addJob` and the `run` of its task take the inner payload, and the task function passed to `implement` receives it:
+
+```ts
+// tasks/sendEmail.ts
+import { defineTenantTask } from "./defineTenantTask"
+
+export const sendEmailTask = defineTenantTask("sendEmail").withPayload<{ to: string }>()
+```
+
+```ts
+// tasks/sendEmail.task.ts
+import { sendEmail } from "../email"
+
+import { sendEmailTask } from "./sendEmail"
+
+export default sendEmailTask.implement(async ({ to }) => {
+  await sendEmail(to) // Runs in the tenant's context.
+})
+```
+
+In a tenant's context, this enqueues `tenant:sendEmail` with `{ schema, payload: { to } }` and the job key `tenant:<schema>:welcome`:
+
+```ts
+import { sendEmailTask } from "./tasks/sendEmail"
+
+await sendEmailTask.addJob({ to: "user@example.com" }, { jobKey: "welcome" })
+```
+
+`prefixTaskSpec` prefixes the job key and the queue name of a spec, when they are not empty, so jobs of different tenants do not share keys and queues.
+
+`GraphileWorkerTasks` and `TaskJobPayload` use the job payload, and `TaskPayload` uses the inner payload.
+
+`run` builds the job payload with `encodePayload` in the current context, so a helpers factory receives the job payload:
+
+```ts
+import sendEmail from "./tasks/sendEmail.task"
+
+await sendEmail.run({ to: "user@example.com" }, ({ defaultHelpers, payload }) => ({
+  ...defaultHelpers,
+  query: queryForTenant(payload.schema),
+}))
+```
+
+`wrapTaskDefinition` also accepts an unbound definition and keeps its `withAddJob`, because the job payload belongs to the task contract while `addJob` is chosen by the code that enqueues jobs.
+
 ### Defining a task with its implementation
 
 A task that no producer enqueues, such as a cron task, can be defined together with its implementation.

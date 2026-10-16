@@ -24,16 +24,20 @@ export type Task<TPayload> = (payload: TPayload, helpers: JobHelpers) => TaskRes
 
 /**
  * A task function annotated with the graphile-worker task identifier it handles.
+ *
+ * `TRunPayload` is the payload that `run` takes; it differs from the job payload only for tasks of a wrapped definition.
  */
-export type NamedTask<TIdentifier extends string, TPayload> = Task<TPayload> & {
+export type NamedTask<TIdentifier extends string, TPayload, TRunPayload = TPayload> = Task<TPayload> & {
   /**
    * Identifier used by graphile-worker to route jobs to this task.
    */
   taskIdentifier: TIdentifier
   /**
    * Run this task directly with the default manual helpers, optionally patched or replaced by the provided helpers.
+   *
+   * It takes the payload that `addJob` accepts, while a helpers factory receives the job payload passed to the task function.
    */
-  run(payload: TPayload, helpers?: TaskHelpers<TPayload>): TaskResult
+  run(payload: TRunPayload, helpers?: TaskHelpers<TPayload>): TaskResult
 }
 
 /**
