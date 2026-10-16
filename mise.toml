@@ -1,4 +1,8 @@
+[settings]
+lockfile = true
+
 [tools]
+lefthook = "latest"
 node = '24.8'
 
 [settings.node]
