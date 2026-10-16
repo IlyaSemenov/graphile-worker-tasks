@@ -69,3 +69,15 @@ test("bound task definition", () => {
   // @ts-expect-error A bound definition cannot be bound again.
   defineBoundNamedTask("task2").withAddJob(addJob)
 })
+
+test("task without payload", () => {
+  const boundDefinition = defineTask("task1").withPayload<void>().withAddJob(async () => makeJob())
+
+  boundDefinition.addJob()
+  boundDefinition.addJob(undefined, { maxAttempts: 1 })
+  // @ts-expect-error The task has no payload.
+  boundDefinition.addJob({ foo: "bar" })
+
+  const task = boundDefinition.implement(() => {})
+  task.run()
+})

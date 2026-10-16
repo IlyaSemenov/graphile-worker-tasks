@@ -131,11 +131,13 @@ await sendEmailTask.addJob({ to: "user@example.com" }, { maxAttempts: 5 })
 
 The producer imports the definition, not the task, so the implementation and its dependencies stay out of the producer's module graph.
 
-`TaskPayload<typeof sendEmailTask>` is the payload type that `addJob` accepts, for example in test helpers that check enqueued jobs.
-
 For example, to enqueue jobs within the active Orchid ORM transaction, use `addJob` from [graphile-worker-orchid](https://github.com/IlyaSemenov/graphile-worker-orchid).
 
 `withAddJob` returns a new bound definition, so one definition can be bound to several `addJob` implementations.
+
+Use `withPayload<void>()` to let producers enqueue a task without passing a payload: `addJob()`.
+
+`TaskPayload<typeof sendEmailTask>` is the payload type that `addJob` accepts, for example in test helpers that check enqueued jobs.
 
 ### Binding every task at once
 
