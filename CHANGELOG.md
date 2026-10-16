@@ -1,5 +1,11 @@
 # graphile-worker-tasks
 
+## 2.3.1
+
+### Patch Changes
+
+- d43be6c: Remove `addJob` from the task returned by `implement()` of a bound task definition, added in 2.3.0; enqueue jobs through the definition instead.
+
 ## 2.3.0
 
 ### Minor Changes
