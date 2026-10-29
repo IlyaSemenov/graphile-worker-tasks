@@ -1,5 +1,11 @@
 # graphile-worker-tasks
 
+## 2.6.0
+
+### Minor Changes
+
+- c2eb51d: Add `defineCronItem` and `createRunnerOptions` to schedule a task together with its cron item, so the worker always runs the tasks it schedules.
+
 ## 2.5.0
 
 ### Minor Changes
