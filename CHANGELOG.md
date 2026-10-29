@@ -1,5 +1,11 @@
 # graphile-worker-tasks
 
+## 2.6.1
+
+### Patch Changes
+
+- 9a945f3: Fix `defineCronItem` rejecting a task whose identifier is a type parameter, such as in a generic helper that creates a task together with its cron item.
+
 ## 2.6.0
 
 ### Minor Changes
