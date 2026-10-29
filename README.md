@@ -54,14 +54,13 @@ Run the worker with these tasks:
 
 ```ts
 import { run } from "graphile-worker"
-import { createTaskList } from "graphile-worker-tasks"
+import { createRunnerOptions } from "graphile-worker-tasks"
 
 import { tasks } from "./tasks/tasks"
 
 await run({
   connectionString: "...",
-  taskList: createTaskList(tasks),
-  parsedCronItems: [],
+  ...createRunnerOptions({ tasks }),
 })
 ```
 
@@ -251,40 +250,6 @@ export default defineTask("cleanup", async () => {
 })
 ```
 
-The worker references it in a cron item by its identifier:
-
-```ts
-import { parseCronItems } from "graphile-worker"
-
-import cleanup from "./tasks/cleanup.task"
-
-const parsedCronItems = parseCronItems([{ task: cleanup.taskIdentifier, match: "0 4 * * *" }])
-```
-
-To reuse the schedule elsewhere, give the task a separate definition and export the cron item next to it: the cron item needs only `taskIdentifier`.
-A task without payload does not need `withPayload`:
-
-```ts
-// tasks/cleanup.ts
-import type { CronItem } from "graphile-worker"
-import { defineTask } from "graphile-worker-tasks"
-
-export const cleanupTask = defineTask("cleanup")
-
-export const cleanupCronItem: CronItem = { task: cleanupTask.taskIdentifier, match: "0 4 * * *" }
-```
-
-```ts
-// tasks/cleanup.task.ts
-import { cleanup } from "../cleanup"
-
-import { cleanupTask } from "./cleanup"
-
-export default cleanupTask.implement(async () => {
-  await cleanup()
-})
-```
-
 A task defined together with its implementation brings its implementation and dependencies into every module that imports it.
 When producers need to enqueue it, move the identifier and payload type to a definition and keep the implementation in a worker-only module:
 
@@ -304,6 +269,121 @@ export default sendEmailTask.implement(async ({ to }) => {
 ```
 
 The task identifier and payload are unchanged, so jobs enqueued before the split run with the new task.
+
+### Scheduling tasks
+
+Define a cron item next to the task it schedules, in a module imported only by the worker:
+
+```ts
+// tasks/cleanup.task.ts
+import { defineCronItem, defineTask } from "graphile-worker-tasks"
+
+import { cleanup } from "../cleanup"
+
+const cleanupTask = defineTask("cleanup", async () => {
+  await cleanup()
+})
+
+export const cleanupCronItem = defineCronItem({ task: cleanupTask, match: "0 4 * * *" })
+```
+
+`defineCronItem` takes the fields of graphile-worker's `CronItem`, with the task in place of its identifier.
+
+Pass the cron items to `createRunnerOptions`.
+It adds the task of each cron item to the task list, so the worker cannot schedule a task it does not run:
+
+```ts
+import { run } from "graphile-worker"
+import { createRunnerOptions } from "graphile-worker-tasks"
+
+import { cleanupCronItem } from "./tasks/cleanup.task"
+import { tasks } from "./tasks/tasks"
+
+await run({
+  connectionString: "...",
+  ...createRunnerOptions({ tasks, cronItems: [cleanupCronItem] }),
+})
+```
+
+- The same task can be in `tasks` and in cron items, while different tasks with the same identifier are rejected.
+- The identifier of a cron item defaults to its task identifier.
+  graphile-worker keeps the schedule state by this identifier, so give cron items of the same task distinct identifiers.
+- The `payload` of a cron item must match the payload type of its task, except for the `_cron` field that graphile-worker adds to it.
+  A task with a `void` payload is scheduled without a payload.
+- A worker started with `createRunnerOptions` does not read a `crontab` file, even without cron items.
+  To use one, pass `taskList: createTaskList(tasks)` instead.
+
+The worker decides which cron items to pass, so a deployment can schedule a task that producers also enqueue manually.
+For example, a sync task defined with `withPayload<void>()` stays in `tasks` and is scheduled only when enabled:
+
+```ts
+// tasks/sync.task.ts
+import { defineCronItem } from "graphile-worker-tasks"
+
+import { sync } from "../sync"
+
+import { syncTask } from "./sync"
+
+const task = syncTask.implement(async () => {
+  await sync()
+})
+
+export default task
+
+export const syncCronItem = defineCronItem({ task, match: "0 * * * *" })
+```
+
+```ts
+import { syncCronItem } from "./tasks/sync.task"
+import { tasks } from "./tasks/tasks"
+
+await run({
+  connectionString: "...",
+  ...createRunnerOptions({
+    tasks,
+    cronItems: process.env.SYNC_SCHEDULE_ENABLED ? [syncCronItem] : [],
+  }),
+})
+```
+
+A helper can create the task it schedules and return only the cron item, so the worker gets both from one value.
+For example, to run a [wrapped tenant task](#wrapping-tasks) for every tenant on a schedule, a dispatcher task enqueues it in the context of each tenant:
+
+```ts
+// tasks/defineTenantCronItem.ts
+import type { CronItem } from "graphile-worker"
+import { defineCronItem, defineTask } from "graphile-worker-tasks"
+
+import { listTenantSchemas, withTenantSchema } from "../tenants"
+
+import type { defineTenantTask } from "./defineTenantTask"
+
+export function defineTenantCronItem(definition: ReturnType<typeof defineTenantTask>, cronItem: Omit<CronItem, "task">) {
+  const dispatchTask = defineTask(`cron:${definition.taskIdentifier}`, async () => {
+    for (const schema of await listTenantSchemas()) {
+      await withTenantSchema(schema, () => definition.addJob(undefined))
+    }
+  })
+  return defineCronItem({ ...cronItem, task: dispatchTask })
+}
+```
+
+```ts
+// tasks/sendDigest.task.ts
+import { sendDigest } from "../digest"
+
+import { defineTenantCronItem } from "./defineTenantCronItem"
+import { sendDigestTask } from "./sendDigest"
+
+export default sendDigestTask.implement(async () => {
+  await sendDigest() // Runs in the tenant's context.
+})
+
+export const sendDigestCronItem = defineTenantCronItem(sendDigestTask, { match: "0 8 * * *" })
+```
+
+Here `sendDigestTask` is `defineTenantTask("sendDigest")`, and its task stays in `tasks`.
+The worker passes `sendDigestCronItem` to `createRunnerOptions`, which adds the dispatcher task `cron:tenant:sendDigest` to the task list.
 
 ## Running tasks directly
 
