@@ -4,7 +4,7 @@ import type { AddJobFunction, CronItem, Job, ParsedCronItem, RunnerOptions, Task
 import { createDefineTask } from "./boundTasks"
 import type { AnyTaskCronItem, TaskCronItem } from "./cronItems"
 import { createRunnerOptions, defineCronItem } from "./cronItems"
-import type { AnyNamedTask, NamedTask } from "./tasks"
+import type { AnyNamedTask, NamedTask, Task, TaskDefinition, TaskResult } from "./tasks"
 import { defineTask } from "./tasks"
 import { wrapTaskDefinition } from "./wrappedTasks"
 
@@ -113,6 +113,11 @@ describe("defineCronItem", () => {
     defineCronItem({ task: anyNamedTask, match: "0 4 * * *" })
   })
 
+  test("is never for a type that is not an implemented task", () => {
+    expectTypeOf<TaskCronItem<TaskDefinition<"definition", unknown>>>().toBeNever()
+    expectTypeOf<TaskCronItem<Task<unknown> & { taskIdentifier: number, run: (payload: unknown) => TaskResult }>>().toBeNever()
+  })
+
   test("checks the payload against each task of a union", () => {
     const fooTask = defineTask("foo").withPayload<{ foo: string }>().implement(() => {})
     const barTask = defineTask("bar").withPayload<{ bar: number }>().implement(() => {})
@@ -134,6 +139,49 @@ describe("defineCronItem", () => {
     defineCronItem({ task, match: "0 4 * * *", payload: 1 })
   })
 
+  test("schedules a task whose identifier is a type parameter", () => {
+    function defineScheduledTask<TIdentifier extends string>(taskIdentifier: TIdentifier) {
+      const task = defineTask(taskIdentifier, async () => {})
+      return defineCronItem({ task, match: "0 4 * * *", options: { maxAttempts: 1 } })
+    }
+
+    const cronItem = defineScheduledTask("scheduled")
+    expectTypeOf(cronItem.task).toEqualTypeOf<NamedTask<"scheduled", unknown>>()
+    createRunnerOptions({ cronItems: [cronItem] })
+  })
+
+  test("checks the payload of a task whose identifier is a type parameter", () => {
+    function defineRequiredCronItem<TIdentifier extends string>(taskIdentifier: TIdentifier) {
+      const task = defineTask(taskIdentifier).withPayload<{ foo: string }>().implement(() => {})
+      // @ts-expect-error The task requires a payload.
+      defineCronItem({ task, match: "0 4 * * *" })
+      return defineCronItem({ task, match: "0 4 * * *", payload: { foo: "bar" } })
+    }
+
+    createRunnerOptions({ cronItems: [defineRequiredCronItem("required")] })
+  })
+
+  test("checks the payload of a task whose payload fields are type parameters", () => {
+    function defineDataCronItem<TIdentifier extends string, TData>(taskIdentifier: TIdentifier, data: TData) {
+      const task = defineTask(taskIdentifier).withPayload<{ data: TData }>().implement(() => {})
+      // @ts-expect-error The task requires a payload.
+      defineCronItem({ task, match: "0 4 * * *" })
+      return defineCronItem({ task, match: "0 4 * * *", payload: { data } })
+    }
+
+    createRunnerOptions({ cronItems: [defineDataCronItem("data", 1)] })
+  })
+
+  test("rejects a task whose payload is a type parameter", () => {
+    function defineGenericCronItem<TPayload extends Record<string, unknown>>(payload: TPayload) {
+      const task = defineTask("generic").withPayload<TPayload>().implement(() => {})
+      // @ts-expect-error The payload cannot be checked against a payload type of unknown shape.
+      return defineCronItem({ task, match: "0 4 * * *", payload })
+    }
+
+    void defineGenericCronItem
+  })
+
   test("schedules a task created by a helper", () => {
     const addJob = (async () => ({}) as Job) as AddJobFunction
     const defineJobTask = createDefineTask({ addJob })
@@ -149,14 +197,16 @@ describe("defineCronItem", () => {
       return Object.assign(createDefinition<unknown>(), { withPayload: createDefinition })
     }
 
-    function defineTenantCronItem(definition: ReturnType<typeof defineTenantTask>, cronItem: Omit<CronItem, "task">) {
+    function defineTenantCronItem<TIdentifier extends string>(definition: ReturnType<typeof defineTenantTask<TIdentifier>>, cronItem: Omit<CronItem, "task">) {
       const task = defineTask(`cron:${definition.taskIdentifier}`, async () => {
         await definition.addJob(undefined)
       })
       return defineCronItem({ ...cronItem, task })
     }
 
-    createRunnerOptions({ cronItems: [defineTenantCronItem(defineTenantTask("cleanup"), { match: "0 4 * * *", options: { maxAttempts: 1 } })] })
+    const cronItem = defineTenantCronItem(defineTenantTask("cleanup"), { match: "0 4 * * *", options: { maxAttempts: 1 } })
+    expectTypeOf(cronItem.task.taskIdentifier).toEqualTypeOf<"cron:tenant:cleanup">()
+    createRunnerOptions({ cronItems: [cronItem] })
     // @ts-expect-error The dispatcher cannot enqueue a tenant task with a payload.
     defineTenantCronItem(defineTenantTask("sendEmail").withPayload<{ to: string }>(), { match: "0 4 * * *" })
   })

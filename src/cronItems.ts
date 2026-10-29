@@ -1,7 +1,7 @@
 import type { CronItem, ParsedCronItem, TaskList } from "graphile-worker"
 import { parseCronItems } from "graphile-worker"
 
-import type { AnyNamedTask, TaskJobPayload } from "./tasks"
+import type { AnyNamedTask, NamedTask, TaskJobPayload } from "./tasks"
 import { createTaskList } from "./tasks"
 
 /**
@@ -11,7 +11,10 @@ import { createTaskList } from "./tasks"
  * For a union of tasks, it is a union of their cron items, so each task is checked against its own payload.
  * It is `never` when the given type is not an implemented task.
  */
-export type TaskCronItem<TTask> = TTask extends AnyNamedTask
+// Infer the task identifier instead of checking it against `string`: TypeScript resolves a conditional type with type parameters only if it holds without their constraints,
+// so the cron item of a task whose identifier is a type parameter of a generic function would stay unresolved and accept no value.
+// The inferred identifier keeps the `string` constraint of NamedTask.
+export type TaskCronItem<TTask> = TTask extends NamedTask<infer _TIdentifier, never>
   ? Omit<CronItem, "task" | "payload"> & {
     /**
      * Task to schedule, added to the task list together with the cron item.

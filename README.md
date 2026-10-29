@@ -358,7 +358,7 @@ import { listTenantSchemas, withTenantSchema } from "../tenants"
 
 import type { defineTenantTask } from "./defineTenantTask"
 
-export function defineTenantCronItem(definition: ReturnType<typeof defineTenantTask>, cronItem: Omit<CronItem, "task">) {
+export function defineTenantCronItem<TIdentifier extends string>(definition: ReturnType<typeof defineTenantTask<TIdentifier>>, cronItem: Omit<CronItem, "task">) {
   const dispatchTask = defineTask(`cron:${definition.taskIdentifier}`, async () => {
     for (const schema of await listTenantSchemas()) {
       await withTenantSchema(schema, () => definition.addJob(undefined))
@@ -384,6 +384,8 @@ export const sendDigestCronItem = defineTenantCronItem(sendDigestTask, { match: 
 
 Here `sendDigestTask` is `defineTenantTask("sendDigest")`, and its task stays in `tasks`.
 The worker passes `sendDigestCronItem` to `createRunnerOptions`, which adds the dispatcher task `cron:tenant:sendDigest` to the task list.
+
+In a generic helper, a task payload like `{ data: T }` works, but `T` alone is not supported.
 
 ## Running tasks directly
 
